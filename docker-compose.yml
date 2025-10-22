@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # PostGIS 15 Database
+  postgis:
+    image: postgis/postgis:15-3.4
+    container_name: cmu_udfire_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cmu_udfire
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgis/data:/var/lib/postgresql/data
+      - ./postgis/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - udfire_network
+
+  # FastAPI Backend
+  fastapi:
+    build:
+      context: ./fastapi
+      dockerfile: Dockerfile
+    container_name: cmu_udfire_fastapi
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/cmu_udfire
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cmu_udfire
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./fastapi:/app
+    depends_on:
+      postgis:
+        condition: service_healthy
+    networks:
+      - udfire_network
+
+  # Vite React Frontend
+  react:
+    build:
+      context: ./react
+      dockerfile: Dockerfile
+    container_name: cmu_udfire_react
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "3000:5173"
+    volumes:
+      - ./react:/app
+      - /app/node_modules
+    depends_on:
+      - fastapi
+    networks:
+      - udfire_network
+
+networks:
+  udfire_network:
+    driver: bridge
