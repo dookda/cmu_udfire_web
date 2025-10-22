@@ -13,14 +13,16 @@ export default function LayerLegend({ layerType, visParams }) {
     'ndvi': 'ดัชนีความแตกต่างของพืชพรรณ: NDVI',
     'ndwi': 'ดัชนีความแตกต่างของน้ำ: NDWI',
     'burn': 'ดัชนีพื้นที่เปิดโล่ง',
-    'biomass': 'Biomass (kg/m²)'
+    'biomass': 'Biomass (kg/m²)',
+    'biomass_3pgs': 'Biomass 3PGs (kg/m²)',
+    'biomass_equation': 'Biomass (Parinwat & Sakda) (kg/m²)'
   }
 
   const label = labels[layerType] || layerType.toUpperCase()
 
   return (
-    <div className="bg-base-100/90 backdrop-blur-sm rounded-lg shadow-lg p-3 min-w-[180px]">
-      <div className="font-bold text-xs mb-2">{label}</div>
+    <div className="bg-base-100/90 backdrop-blur-sm rounded-lg shadow-lg p-3 min-w-[180px] max-w-[240px]">
+      <div className="font-bold text-xs mb-2 leading-tight">{label}</div>
 
       {/* Color gradient */}
       <div

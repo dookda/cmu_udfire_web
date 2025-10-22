@@ -165,34 +165,6 @@ export default function HotspotPredicting() {
     </div>
   )
 
-  const activitiesContent = (
-    <div className="py-4">
-      <div className="space-y-3 text-sm">
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 7, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium text-error">High Risk Alert</div>
-            <div className="text-xs text-base-content/60">8 locations flagged for monitoring</div>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 1, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium">Model Retrained</div>
-            <div className="text-xs text-base-content/60">Accuracy improved to 87%</div>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Sep 25, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium text-success">Validation Complete</div>
-            <div className="text-xs text-base-content/60">23/25 predictions confirmed</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title="Hotspot Predicting"
@@ -210,7 +182,6 @@ export default function HotspotPredicting() {
         <BottomPanel
           cropInfo={cropInfoContent}
           chartData={chartContent}
-          activities={activitiesContent}
         />
       }
     >

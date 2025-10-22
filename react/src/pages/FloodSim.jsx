@@ -143,27 +143,6 @@ export default function FloodSim() {
     </div>
   )
 
-  const activitiesContent = (
-    <div className="py-4">
-      <div className="space-y-3 text-sm">
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 7, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium">Simulation Run</div>
-            <div className="text-xs text-base-content/60">Extreme rainfall scenario</div>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Sep 20, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium">Model Calibration</div>
-            <div className="text-xs text-base-content/60">Updated drainage parameters</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title="Flood Simulation"
@@ -181,7 +160,6 @@ export default function FloodSim() {
         <BottomPanel
           cropInfo={cropInfoContent}
           chartData={chartContent}
-          activities={activitiesContent}
         />
       }
     >

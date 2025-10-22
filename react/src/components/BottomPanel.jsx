@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function BottomPanel({ cropInfo, chartData, activities }) {
+export default function BottomPanel({ cropInfo, chartData }) {
   const [activeTab, setActiveTab] = useState('chart')
 
   return (
@@ -18,12 +18,6 @@ export default function BottomPanel({ cropInfo, chartData, activities }) {
           onClick={() => setActiveTab('chart')}
         >
           Chart
-        </a>
-        <a
-          className={`tab ${activeTab === 'activities' ? 'tab-active' : ''}`}
-          onClick={() => setActiveTab('activities')}
-        >
-          Activities
         </a>
 
         {/* Download button */}
@@ -44,7 +38,6 @@ export default function BottomPanel({ cropInfo, chartData, activities }) {
       <div className="flex-1 overflow-y-auto px-4 pb-4">
         {activeTab === 'cropInfo' && cropInfo}
         {activeTab === 'chart' && chartData}
-        {activeTab === 'activities' && activities}
       </div>
     </div>
   )

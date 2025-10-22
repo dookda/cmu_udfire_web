@@ -3,12 +3,13 @@ import { useMap } from 'react-map-gl/maplibre';
 
 /**
  * Component to add Google Earth Engine tile layer to MapLibre map
- * Persists across basemap style changes
+ * Persists across basemap style changes with robust event handling
  */
 export default function GEETileLayer({ tileUrl, opacity = 0.7, beforeId }) {
   const { current: map } = useMap();
   const layerIdRef = useRef(`gee-layer-${Date.now()}`);
   const sourceIdRef = useRef(`gee-source-${Date.now()}`);
+  const styleLoadHandlerRef = useRef(null);
 
   useEffect(() => {
     if (!map || !tileUrl) return;
@@ -17,73 +18,95 @@ export default function GEETileLayer({ tileUrl, opacity = 0.7, beforeId }) {
     const sourceId = sourceIdRef.current;
     const layerId = layerIdRef.current;
 
-    // Function to add layer to map
+    // Function to safely add layer to map
     const addLayer = () => {
-      // Remove existing layer and source if they exist
-      if (mapInstance.getLayer(layerId)) {
-        mapInstance.removeLayer(layerId);
+      // Wait for style to be fully loaded
+      if (!mapInstance.isStyleLoaded()) {
+        return;
       }
-      if (mapInstance.getSource(sourceId)) {
-        mapInstance.removeSource(sourceId);
+
+      // Remove existing layer and source if they exist
+      try {
+        if (mapInstance.getLayer(layerId)) {
+          mapInstance.removeLayer(layerId);
+        }
+        if (mapInstance.getSource(sourceId)) {
+          mapInstance.removeSource(sourceId);
+        }
+      } catch (error) {
+        console.warn('Error removing existing GEE layer:', error);
       }
 
       // Add new source
-      mapInstance.addSource(sourceId, {
-        type: 'raster',
-        tiles: [tileUrl],
-        tileSize: 256,
-        attribution: 'Google Earth Engine'
-      });
-
-      // Add new layer on top of basemap (as the topmost layer)
-      // If beforeId is not specified, it will be added on top
-      mapInstance.addLayer(
-        {
-          id: layerId,
+      try {
+        mapInstance.addSource(sourceId, {
           type: 'raster',
-          source: sourceId,
-          paint: {
-            'raster-opacity': opacity
-          }
-        },
-        beforeId // undefined by default, which means add on top
-      );
+          tiles: [tileUrl],
+          tileSize: 256,
+          attribution: 'Google Earth Engine'
+        });
 
-      // Ensure this layer is always on top by moving it if needed
-      if (!beforeId) {
-        const layers = mapInstance.getStyle().layers;
-        if (layers && layers.length > 0) {
-          // Move GEE layer to be the last layer (on top)
-          mapInstance.moveLayer(layerId);
+        // Add new layer on top of basemap
+        mapInstance.addLayer(
+          {
+            id: layerId,
+            type: 'raster',
+            source: sourceId,
+            paint: {
+              'raster-opacity': opacity
+            }
+          },
+          beforeId
+        );
+
+        // Ensure this layer is always on top by moving it if needed
+        if (!beforeId) {
+          const layers = mapInstance.getStyle()?.layers;
+          if (layers && layers.length > 0) {
+            mapInstance.moveLayer(layerId);
+          }
         }
+      } catch (error) {
+        console.error('Error adding GEE layer:', error);
       }
     };
 
-    // Add layer when style is loaded
+    // Style load handler that persists across basemap changes
+    const handleStyleLoad = () => {
+      // Small delay to ensure style is fully processed
+      setTimeout(() => {
+        addLayer();
+      }, 100);
+    };
+
+    // Store handler in ref for cleanup
+    styleLoadHandlerRef.current = handleStyleLoad;
+
+    // Initial load
     if (mapInstance.isStyleLoaded()) {
       addLayer();
-    } else {
-      mapInstance.once('style.load', addLayer);
     }
 
-    // Re-add layer when basemap style changes (style.load event)
-    // This ensures GEE layer persists on top when switching basemaps
-    const handleStyleChange = () => {
-      if (mapInstance.isStyleLoaded()) {
-        addLayer();
-      }
-    };
-
-    mapInstance.on('style.load', handleStyleChange);
+    // Listen for style changes (basemap switching)
+    mapInstance.on('style.load', handleStyleLoad);
 
     // Cleanup
     return () => {
-      mapInstance.off('style.load', handleStyleChange);
-      if (mapInstance.getLayer(layerId)) {
-        mapInstance.removeLayer(layerId);
+      if (styleLoadHandlerRef.current) {
+        mapInstance.off('style.load', styleLoadHandlerRef.current);
       }
-      if (mapInstance.getSource(sourceId)) {
-        mapInstance.removeSource(sourceId);
+
+      // Clean removal of layer and source
+      try {
+        if (mapInstance.getLayer(layerId)) {
+          mapInstance.removeLayer(layerId);
+        }
+        if (mapInstance.getSource(sourceId)) {
+          mapInstance.removeSource(sourceId);
+        }
+      } catch (error) {
+        // Map may already be destroyed
+        console.warn('Cleanup warning:', error);
       }
     };
   }, [map, tileUrl, opacity, beforeId]);

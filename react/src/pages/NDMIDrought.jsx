@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import MapLayout from '../components/MapLayout'
 import Map from '../components/Map'
 import BottomPanel from '../components/BottomPanel'
-import NDVIChart from '../components/NDVIChart'
+import TimeSeriesChart from '../components/TimeSeriesChart'
 import GEETileLayer from '../components/GEETileLayer'
 import LayerLegend from '../components/LayerLegend'
 import { useGEELayer } from '../hooks/useGEELayer'
@@ -42,28 +42,55 @@ export default function NDMIDrought() {
     }
   }, [selectedArea, studyAreas])
 
-  // Sample NDVI data for chart
-  const ndviData = {
-    '2025': {
-      values: Array.from({ length: 19 }, (_, i) => ({ value: 0.5 + Math.random() * 0.1 })),
-      locked: false
-    },
-    '2024': {
-      values: Array.from({ length: 19 }, (_, i) => ({ value: 0.45 + Math.random() * 0.1 })),
-      locked: true
-    },
-    '2023': {
-      values: Array.from({ length: 19 }, (_, i) => ({ value: 0.4 + Math.random() * 0.1 })),
-      locked: true
-    },
-    '2022': {
-      values: Array.from({ length: 19 }, (_, i) => ({ value: 0.48 + Math.random() * 0.1 })),
-      locked: true
-    },
-    '2021': {
-      values: Array.from({ length: 19 }, (_, i) => ({ value: 0.42 + Math.random() * 0.1 })),
-      locked: true
+  // Generate sample timeseries data based on layer type and area
+  const generateTimeSeriesData = useMemo(() => {
+    const baseDate = new Date('2024-01-01')
+    const dataPoints = []
+
+    // Generate monthly data for the year
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(baseDate)
+      date.setMonth(baseDate.getMonth() + i)
+
+      // Different patterns for different layers
+      let baseValue = 0
+      if (activeLayer === 'ndmi') {
+        baseValue = 0.3 + Math.sin(i * Math.PI / 6) * 0.2 // Seasonal moisture pattern
+      } else if (activeLayer === 'ndvi') {
+        baseValue = 0.5 + Math.sin(i * Math.PI / 6) * 0.3 // Seasonal vegetation pattern
+      } else if (activeLayer === 'ndwi') {
+        baseValue = 0.1 + Math.sin(i * Math.PI / 6) * 0.15 // Seasonal water pattern
+      }
+
+      // Add some variation by area
+      const areaVariation = selectedArea === 'ud' ? 0.1 :
+                           selectedArea === 'mt' ? 0.05 :
+                           selectedArea === 'ky' ? -0.05 :
+                           selectedArea === 'vs' ? 0.08 : 0
+
+      dataPoints.push({
+        date: date.toISOString().split('T')[0],
+        value: baseValue + areaVariation + (Math.random() - 0.5) * 0.1
+      })
     }
+
+    return dataPoints
+  }, [activeLayer, selectedArea])
+
+  // Get area name in Thai
+  const getAreaName = () => {
+    const area = studyAreas.find(a => a.value === selectedArea)
+    return area ? area.label : 'พื้นที่ศึกษา'
+  }
+
+  // Get layer name in Thai
+  const getLayerName = () => {
+    const names = {
+      'ndmi': 'NDMI (ความชื้น)',
+      'ndvi': 'NDVI (พืชพรรณ)',
+      'ndwi': 'NDWI (น้ำ)'
+    }
+    return names[activeLayer] || activeLayer.toUpperCase()
   }
 
   const sidePanel = (
@@ -197,7 +224,11 @@ export default function NDMIDrought() {
   )
 
   const chartContent = (
-    <NDVIChart data={ndviData} />
+    <TimeSeriesChart
+      data={generateTimeSeriesData}
+      layerType={activeLayer}
+      areaLabel={getAreaName()}
+    />
   )
 
   const cropInfoContent = (
@@ -223,43 +254,6 @@ export default function NDMIDrought() {
     </div>
   )
 
-  const activitiesContent = (
-    <div className="py-4">
-      <div className="space-y-3">
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 15, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium">Irrigation</div>
-            <div className="text-sm text-base-content/60">Applied 50mm water</div>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 10, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium">Fertilization</div>
-            <div className="text-sm text-base-content/60">NPK 15-15-15</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
-  // Get area name in Thai
-  const getAreaName = () => {
-    const area = studyAreas.find(a => a.value === selectedArea)
-    return area ? area.label : 'พื้นที่ศึกษา'
-  }
-
-  // Get layer name in Thai
-  const getLayerName = () => {
-    const names = {
-      'ndmi': 'NDMI (ความชื้น)',
-      'ndvi': 'NDVI (พืชพรรณ)',
-      'ndwi': 'NDWI (น้ำ)'
-    }
-    return names[activeLayer] || activeLayer.toUpperCase()
-  }
-
   return (
     <MapLayout
       title={`${getAreaName()} - ${getLayerName()}`}
@@ -270,7 +264,6 @@ export default function NDMIDrought() {
         <BottomPanel
           cropInfo={cropInfoContent}
           chartData={chartContent}
-          activities={activitiesContent}
         />
       }
     >

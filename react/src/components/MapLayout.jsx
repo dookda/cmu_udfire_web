@@ -148,7 +148,7 @@ export default function MapLayout({
 
       {/* Bottom Panel */}
       {bottomPanel && (
-        <div className="h-48 sm:h-56 md:h-64 bg-base-100 border-t border-base-content/10 overflow-hidden">
+        <div className="h-80 sm:h-96 bg-base-100 border-t border-base-content/10 overflow-hidden">
           {bottomPanel}
         </div>
       )}

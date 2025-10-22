@@ -1,13 +1,53 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import MapLayout from '../components/MapLayout'
 import Map from '../components/Map'
 import Timeline from '../components/Timeline'
 import BottomPanel from '../components/BottomPanel'
+import GEETileLayer from '../components/GEETileLayer'
+import { useGEELayer } from '../hooks/useGEELayer'
 
 export default function BurnScar() {
   const [dateRange, setDateRange] = useState({ start: '2025-09-05', end: '2025-10-25' })
   const [severity, setSeverity] = useState('all')
   const [selectedDate, setSelectedDate] = useState('2025-10-07')
+  const [selectedArea, setSelectedArea] = useState('ud')
+  const [cloudCover, setCloudCover] = useState(30)
+  const mapRef = useRef()
+
+  // Study areas with coordinates (matching GEE script)
+  const studyAreas = useMemo(() => [
+    { value: 'mt', label: 'แม่ทาเหนือ เชียงใหม่', longitude: 99.2568, latitude: 18.7885, zoom: 12 },
+    { value: 'st', label: 'สบเตี๊ยะ เชียงใหม่', longitude: 99.1234, latitude: 18.6543, zoom: 12 },
+    { value: 'ud', label: 'ป่าชุมชน อุตรดิตถ์', longitude: 100.4945, latitude: 17.6152, zoom: 12 },
+    { value: 'ky', label: 'ขุนยวม แม่ฮ่องสอน', longitude: 98.5375, latitude: 18.8046, zoom: 12 },
+    { value: 'vs', label: 'เวียงสา น่าน', longitude: 100.7994, latitude: 18.5397, zoom: 12 }
+  ], [])
+
+  // Auto-zoom to study area when selection changes
+  useEffect(() => {
+    const area = studyAreas.find(a => a.value === selectedArea)
+    if (area && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [area.longitude, area.latitude],
+        zoom: area.zoom,
+        duration: 1000
+      })
+    }
+  }, [selectedArea, studyAreas])
+
+  // Fetch GEE burn scar layer data
+  const { loading, error, layerData } = useGEELayer('burn-scar', {
+    area: selectedArea,
+    startDate: dateRange.start,
+    endDate: dateRange.end,
+    cloudCover: cloudCover
+  })
+
+  // Get area name in Thai
+  const getAreaName = () => {
+    const area = studyAreas.find(a => a.value === selectedArea)
+    return area ? area.label : 'พื้นที่ศึกษา'
+  }
 
   const timelineDates = [
     { date: '2025-09-05', cloudCover: false },
@@ -20,6 +60,22 @@ export default function BurnScar() {
   const sidePanel = (
     <div className="p-4">
       <h3 className="font-bold mb-3 text-sm">Fire Data Settings</h3>
+
+      {/* Study Area Selector */}
+      <div className="form-control mb-4">
+        <label className="label">
+          <span className="label-text text-xs font-bold">เลือกพื้นที่</span>
+        </label>
+        <select
+          className="select select-bordered select-sm"
+          value={selectedArea}
+          onChange={(e) => setSelectedArea(e.target.value)}
+        >
+          {studyAreas.map(area => (
+            <option key={area.value} value={area.value}>{area.label}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="form-control mb-4">
         <label className="label">
@@ -43,6 +99,27 @@ export default function BurnScar() {
           value={dateRange.end}
           onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
         />
+      </div>
+
+      {/* Cloud Cover Slider */}
+      <div className="form-control mb-4">
+        <label className="label">
+          <span className="label-text text-xs font-bold">ระบุ % ปกคลุมของเมฆ</span>
+          <span className="label-text-alt text-xs">{cloudCover}%</span>
+        </label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={cloudCover}
+          onChange={(e) => setCloudCover(Number(e.target.value))}
+          className="range range-sm range-primary"
+        />
+        <div className="w-full flex justify-between text-xs px-2 mt-1">
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
+        </div>
       </div>
 
       <div className="form-control mb-4">
@@ -77,6 +154,19 @@ export default function BurnScar() {
           <span>High Severity</span>
         </div>
       </div>
+
+      {/* Loading/Error Status */}
+      {loading && (
+        <div className="mt-4 text-xs text-info">
+          <span className="loading loading-spinner loading-xs mr-1"></span>
+          Loading layer...
+        </div>
+      )}
+      {error && (
+        <div className="mt-4 text-xs text-error">
+          Error: {error}
+        </div>
+      )}
     </div>
   )
 
@@ -117,31 +207,10 @@ export default function BurnScar() {
     </div>
   )
 
-  const activitiesContent = (
-    <div className="py-4">
-      <div className="space-y-3 text-sm">
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Oct 7, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium text-error">New Burn Scar Detected</div>
-            <div className="text-xs text-base-content/60">Area: 12 km² - High Severity</div>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <div className="text-xs text-base-content/60 w-24">Sep 17, 2025</div>
-          <div className="flex-1">
-            <div className="font-medium text-warning">Fire Event</div>
-            <div className="text-xs text-base-content/60">Multiple hotspots detected</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
-      title="Burn Scar Tracking"
-      area="48 km² affected"
+      title={`${getAreaName()} - Burn Scar Tracking`}
+      area="ข้อมูล: Sentinel-2"
       coordinates="18.7128° N • 98.9950° E"
       sidePanel={sidePanel}
       timelineData={
@@ -155,11 +224,18 @@ export default function BurnScar() {
         <BottomPanel
           cropInfo={cropInfoContent}
           chartData={chartContent}
-          activities={activitiesContent}
         />
       }
     >
-      <Map />
+      <Map ref={mapRef}>
+        {/* Render GEE Burn Scar Layer */}
+        {layerData && layerData.burn_scars && layerData.burn_scars.tile_url && (
+          <GEETileLayer
+            tileUrl={layerData.burn_scars.tile_url}
+            opacity={0.7}
+          />
+        )}
+      </Map>
     </MapLayout>
   )
 }
