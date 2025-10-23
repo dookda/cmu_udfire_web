@@ -163,6 +163,38 @@ async def get_biomass_layer(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/flood")
+async def get_flood_layer(
+    area: str = Query(..., description="Study area code"),
+    before_date: str = Query(..., description="Before flood date (YYYY-MM-DD)"),
+    after_date: str = Query(..., description="After flood date (YYYY-MM-DD)")
+):
+    """
+    Get flood detection layer using Sentinel-1 SAR data
+
+    - **area**: Study area code
+    - **before_date**: Date before flood event (YYYY-MM-DD)
+    - **after_date**: Date after flood event (YYYY-MM-DD)
+
+    Returns:
+    - Flooded area visualization (blue)
+    - Flooded area in km²
+    - Detection confidence
+    """
+    try:
+        result = gee_service.get_flood_layer(area, before_date, after_date)
+        return {
+            "success": True,
+            "data": result,
+            "layer_type": "flood",
+            "area": area,
+            "before_date": before_date,
+            "after_date": after_date
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/study-areas")
 async def get_study_areas():
     """

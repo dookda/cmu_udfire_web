@@ -6,12 +6,14 @@ import TimeSeriesChart from '../components/TimeSeriesChart'
 import GEETileLayer from '../components/GEETileLayer'
 import LayerLegend from '../components/LayerLegend'
 import { useGEELayer } from '../hooks/useGEELayer'
+import { fitMapToBounds } from '../utils/mapUtils'
 
 export default function NDMIDrought() {
   const [selectedDate, setSelectedDate] = useState('2024-12-31')
   const [selectedArea, setSelectedArea] = useState('ud')
   const [activeLayer, setActiveLayer] = useState('ndmi')
   const [daysComposite, setDaysComposite] = useState(30)
+  const [showLayer, setShowLayer] = useState(true)
   const mapRef = useRef()
 
   // Fetch GEE layer data based on active layer
@@ -30,17 +32,10 @@ export default function NDMIDrought() {
     { value: 'ms', label: 'แม่สะเรียง แม่ฮ่องสอน', longitude: 98.2615, latitude: 18.1750, zoom: 12 }
   ], [])
 
-  // Auto-zoom to study area when selection changes
+  // Auto-zoom to study area using bounds from GEE data when available
   useEffect(() => {
-    const area = studyAreas.find(a => a.value === selectedArea)
-    if (area && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [area.longitude, area.latitude],
-        zoom: area.zoom,
-        duration: 1000
-      })
-    }
-  }, [selectedArea, studyAreas])
+    fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
+  }, [selectedArea, studyAreas, layerData])
 
   // Generate sample timeseries data based on layer type and area
   const generateTimeSeriesData = useMemo(() => {
@@ -142,6 +137,19 @@ export default function NDMIDrought() {
         />
       </div>
 
+      {/* Show/Hide Layer Toggle */}
+      <div className="form-control mb-4">
+        <label className="label cursor-pointer justify-start gap-3">
+          <input
+            type="checkbox"
+            className="toggle toggle-primary toggle-sm"
+            checked={showLayer}
+            onChange={(e) => setShowLayer(e.target.checked)}
+          />
+          <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
+        </label>
+      </div>
+
       <div className="divider my-2"></div>
 
       {/* Layer Selector */}
@@ -231,29 +239,6 @@ export default function NDMIDrought() {
     />
   )
 
-  const cropInfoContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Crop Type</div>
-          <div className="font-medium">Rice Paddy</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Growth Stage</div>
-          <div className="font-medium">Vegetative</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Health Index</div>
-          <div className="font-medium text-success">Good (0.65)</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Water Stress</div>
-          <div className="font-medium text-warning">Moderate</div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title={`${getAreaName()} - ${getLayerName()}`}
@@ -262,28 +247,28 @@ export default function NDMIDrought() {
       sidePanel={sidePanel}
       bottomPanel={
         <BottomPanel
-          cropInfo={cropInfoContent}
           chartData={chartContent}
         />
       }
     >
       <Map ref={mapRef}>
         {/* Render GEE Tile Layer */}
-        {layerData && layerData.tile_url && (
-          <GEETileLayer
-            tileUrl={layerData.tile_url}
-            opacity={0.7}
-          />
-        )}
-
-        {/* Dynamic Layer Legend - updates based on active layer */}
-        {layerData && layerData.vis_params && (
-          <div className="absolute bottom-4 left-2 sm:left-4 z-10">
-            <LayerLegend
-              layerType={activeLayer}
-              visParams={layerData.vis_params}
+        {showLayer && layerData && layerData.tile_url && (
+          <>
+            <GEETileLayer
+              tileUrl={layerData.tile_url}
+              opacity={0.7}
             />
-          </div>
+            {/* Dynamic Layer Legend - updates based on active layer */}
+            {layerData.vis_params && (
+              <div className="absolute bottom-4 left-2 sm:left-4 z-10">
+                <LayerLegend
+                  layerType={activeLayer}
+                  visParams={layerData.vis_params}
+                />
+              </div>
+            )}
+          </>
         )}
       </Map>
     </MapLayout>

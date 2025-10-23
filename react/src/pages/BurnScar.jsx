@@ -4,7 +4,9 @@ import Map from '../components/Map'
 import Timeline from '../components/Timeline'
 import BottomPanel from '../components/BottomPanel'
 import GEETileLayer from '../components/GEETileLayer'
+import LayerLegend from '../components/LayerLegend'
 import { useGEELayer } from '../hooks/useGEELayer'
+import { fitMapToBounds } from '../utils/mapUtils'
 
 export default function BurnScar() {
   const [dateRange, setDateRange] = useState({ start: '2025-09-05', end: '2025-10-25' })
@@ -12,6 +14,7 @@ export default function BurnScar() {
   const [selectedDate, setSelectedDate] = useState('2025-10-07')
   const [selectedArea, setSelectedArea] = useState('ud')
   const [cloudCover, setCloudCover] = useState(30)
+  const [showLayer, setShowLayer] = useState(true)
   const mapRef = useRef()
 
   // Study areas with coordinates (matching GEE script)
@@ -23,18 +26,6 @@ export default function BurnScar() {
     { value: 'vs', label: 'เวียงสา น่าน', longitude: 100.7994, latitude: 18.5397, zoom: 12 }
   ], [])
 
-  // Auto-zoom to study area when selection changes
-  useEffect(() => {
-    const area = studyAreas.find(a => a.value === selectedArea)
-    if (area && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [area.longitude, area.latitude],
-        zoom: area.zoom,
-        duration: 1000
-      })
-    }
-  }, [selectedArea, studyAreas])
-
   // Fetch GEE burn scar layer data
   const { loading, error, layerData } = useGEELayer('burn-scar', {
     area: selectedArea,
@@ -42,6 +33,11 @@ export default function BurnScar() {
     endDate: dateRange.end,
     cloudCover: cloudCover
   })
+
+  // Auto-zoom to study area using bounds from GEE data when available
+  useEffect(() => {
+    fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
+  }, [selectedArea, studyAreas, layerData])
 
   // Get area name in Thai
   const getAreaName = () => {
@@ -122,6 +118,19 @@ export default function BurnScar() {
         </div>
       </div>
 
+      {/* Show/Hide Layer Toggle */}
+      <div className="form-control mb-4">
+        <label className="label cursor-pointer justify-start gap-3">
+          <input
+            type="checkbox"
+            className="toggle toggle-primary toggle-sm"
+            checked={showLayer}
+            onChange={(e) => setShowLayer(e.target.checked)}
+          />
+          <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
+        </label>
+      </div>
+
       <div className="form-control mb-4">
         <label className="label">
           <span className="label-text text-xs">Burn Severity</span>
@@ -136,23 +145,6 @@ export default function BurnScar() {
           <option value="moderate">Moderate Severity</option>
           <option value="high">High Severity</option>
         </select>
-      </div>
-
-      <div className="divider text-xs">Legend</div>
-
-      <div className="space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-yellow-400 rounded"></div>
-          <span>Low Severity</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-orange-500 rounded"></div>
-          <span>Moderate Severity</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-red-700 rounded"></div>
-          <span>High Severity</span>
-        </div>
       </div>
 
       {/* Loading/Error Status */}
@@ -192,21 +184,6 @@ export default function BurnScar() {
     </div>
   )
 
-  const cropInfoContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Detection Method</div>
-          <div className="font-medium">NBR Analysis</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Last Updated</div>
-          <div className="font-medium">Oct 7, 2025</div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title={`${getAreaName()} - Burn Scar Tracking`}
@@ -222,18 +199,26 @@ export default function BurnScar() {
       }
       bottomPanel={
         <BottomPanel
-          cropInfo={cropInfoContent}
           chartData={chartContent}
         />
       }
     >
       <Map ref={mapRef}>
         {/* Render GEE Burn Scar Layer */}
-        {layerData && layerData.burn_scars && layerData.burn_scars.tile_url && (
-          <GEETileLayer
-            tileUrl={layerData.burn_scars.tile_url}
-            opacity={0.7}
-          />
+        {showLayer && layerData && layerData.burn_scars && layerData.burn_scars.tile_url && (
+          <>
+            <GEETileLayer
+              tileUrl={layerData.burn_scars.tile_url}
+              opacity={0.7}
+            />
+            {/* Layer Legend - Bottom Left */}
+            <div className="absolute bottom-4 left-2 sm:left-4 z-10">
+              <LayerLegend
+                layerType="burn"
+                visParams={layerData.burn_scars.vis_params}
+              />
+            </div>
+          </>
         )}
       </Map>
     </MapLayout>

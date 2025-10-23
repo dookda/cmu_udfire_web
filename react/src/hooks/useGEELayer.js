@@ -3,7 +3,7 @@ import { geeService } from '../services/geeService';
 
 /**
  * Custom hook to fetch and manage Google Earth Engine layers
- * @param {string} layerType - Type of layer (ndmi, ndvi, ndwi, burn-scar, biomass)
+ * @param {string} layerType - Type of layer (ndmi, ndvi, ndwi, burn-scar, biomass, flood)
  * @param {object} params - Parameters for the layer (area, dates, etc.)
  */
 export function useGEELayer(layerType, params) {
@@ -62,6 +62,14 @@ export function useGEELayer(layerType, params) {
               params.area,
               params.endDate,
               params.days
+            );
+            break;
+
+          case 'flood':
+            result = await geeService.getFloodLayer(
+              params.area,
+              params.beforeDate,
+              params.afterDate
             );
             break;
 

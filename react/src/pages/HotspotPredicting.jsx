@@ -90,27 +90,6 @@ export default function HotspotPredicting() {
         </div>
       </div>
 
-      <div className="divider text-xs">Risk Probability</div>
-
-      <div className="space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-yellow-300 rounded"></div>
-          <span>Low (0-30%)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-orange-400 rounded"></div>
-          <span>Medium (30-60%)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-red-600 rounded"></div>
-          <span>High (60-85%)</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-purple-800 rounded"></div>
-          <span>Very High (&gt;85%)</span>
-        </div>
-      </div>
-
       <button className="btn btn-primary btn-sm w-full mt-4">
         Update Prediction
       </button>
@@ -142,29 +121,6 @@ export default function HotspotPredicting() {
     </div>
   )
 
-  const cropInfoContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Model Type</div>
-          <div className="font-medium">Random Forest ML</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Training Data</div>
-          <div className="font-medium">2020-2025</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Features Used</div>
-          <div className="font-medium">18 parameters</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Last Updated</div>
-          <div className="font-medium">Oct 7, 2025</div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title="Hotspot Predicting"
@@ -180,7 +136,6 @@ export default function HotspotPredicting() {
       }
       bottomPanel={
         <BottomPanel
-          cropInfo={cropInfoContent}
           chartData={chartContent}
         />
       }

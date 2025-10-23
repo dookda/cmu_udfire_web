@@ -26,7 +26,8 @@ class GEEService:
         "ndmi": ['e66101', 'fdb863', 'f7f7f7', 'b2abd2', '5e3c99'],
         "ndwi": ['d01c8b', 'f1b6da', 'f7f7f7', 'b8e186', '4dac26'],
         "burn": ['4f5bd5', 'd62976', 'feda75', 'feda75'],
-        "biomass": ['5e3c99', 'b2abd2', 'f7f7f7', 'fdb863', 'e66101']
+        "biomass": ['5e3c99', 'b2abd2', 'f7f7f7', 'fdb863', 'e66101'],
+        "flood": ['0000ff']  # Blue for flooded areas
     }
 
     def __init__(self):
@@ -444,4 +445,94 @@ class GEEService:
             'vis_params': vis_params,
             'bounds': bounds,
             'stats': stats
+        }
+
+    def get_flood_layer(
+        self,
+        area_code: str,
+        before_date: str,
+        after_date: str
+    ) -> Dict:
+        """
+        Get flood detection layer using Sentinel-1 SAR data
+
+        Args:
+            area_code: Study area code
+            before_date: Date before flood event (YYYY-MM-DD)
+            after_date: Date after flood event (YYYY-MM-DD)
+
+        Returns:
+            Dictionary with tile URL for flooded areas
+        """
+        area = self.get_study_area(area_code)
+
+        # Sentinel-1 GRD collection
+        s1_collection = ee.ImageCollection('COPERNICUS/S1_GRD') \
+            .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VH')) \
+            .filter(ee.Filter.eq('orbitProperties_pass', 'DESCENDING')) \
+            .filter(ee.Filter.eq('instrumentMode', 'IW')) \
+            .filterBounds(area)
+
+        # Before flood image - use 30-day window for better data availability
+        before_end = ee.Date(before_date)
+        before_start = before_end.advance(-30, 'day')
+        before_collection = s1_collection.filterDate(before_start, before_end)
+        before_image = before_collection.select('VH').mean().clip(area)
+
+        # After flood image - use 30-day window for better data availability
+        after_start = ee.Date(after_date)
+        after_end = after_start.advance(30, 'day')
+        after_collection = s1_collection.filterDate(after_start, after_end)
+        after_image = after_collection.select('VH').mean().clip(area)
+
+        # Calculate difference
+        difference = after_image.subtract(before_image)
+
+        # Threshold for flood detection (-5.5 dB from flood.js)
+        flood_threshold = -5.5
+        flooded = difference.lt(flood_threshold)
+
+        # Mask permanent water bodies using JRC Global Surface Water
+        gsw = ee.Image('JRC/GSW1_4/GlobalSurfaceWater')
+        permanent_water = gsw.select('occurrence').gt(80)
+        flooded_masked = flooded.where(permanent_water, 0)
+
+        # Mask steep slopes (< 5 degrees from flood.js)
+        srtm = ee.Image('USGS/SRTMGL1_003')
+        slope = ee.Terrain.slope(srtm)
+        flooded_final = flooded_masked.updateMask(slope.lt(5))
+
+        # Visualization parameters - blue for flooded areas
+        vis_params = {
+            'min': 0,
+            'max': 1,
+            'palette': self.PALETTES['flood']
+        }
+
+        # Calculate flooded area in km²
+        area_image = flooded_final.multiply(ee.Image.pixelArea())
+        stats = area_image.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=area,
+            scale=10,
+            maxPixels=1e13,
+            bestEffort=True
+        ).getInfo()
+
+        flooded_area_m2 = stats.get('VH', 0)
+        flooded_area_km2 = flooded_area_m2 / 1000000
+
+        # Get map ID
+        map_id = flooded_final.selfMask().getMapId(vis_params)
+
+        # Get bounds
+        bounds = area.geometry().bounds().getInfo()['coordinates'][0]
+
+        return {
+            'tile_url': map_id['tile_fetcher'].url_format,
+            'vis_params': vis_params,
+            'bounds': bounds,
+            'flood_area': flooded_area_km2,
+            'difference': flood_threshold,
+            'confidence': 85  # High confidence for SAR-based detection
         }

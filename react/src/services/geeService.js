@@ -104,6 +104,26 @@ export const geeService = {
   },
 
   /**
+   * Get flood detection layer
+   * @param {string} area - Study area code
+   * @param {string} beforeDate - Before flood date YYYY-MM-DD
+   * @param {string} afterDate - After flood date YYYY-MM-DD
+   */
+  async getFloodLayer(area, beforeDate, afterDate) {
+    const params = new URLSearchParams({
+      area,
+      before_date: beforeDate,
+      after_date: afterDate
+    });
+
+    const response = await fetch(`${API_BASE_URL}/gee/flood?${params}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch flood layer');
+    }
+    return response.json();
+  },
+
+  /**
    * Get list of available study areas
    */
   async getStudyAreas() {

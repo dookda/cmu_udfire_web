@@ -6,6 +6,7 @@ import BottomPanel from '../components/BottomPanel'
 import GEETileLayer from '../components/GEETileLayer'
 import LayerLegend from '../components/LayerLegend'
 import { useGEELayer } from '../hooks/useGEELayer'
+import { fitMapToBounds } from '../utils/mapUtils'
 
 export default function Biomass() {
   const [selectedDate, setSelectedDate] = useState('2024-12-31')
@@ -24,24 +25,17 @@ export default function Biomass() {
     { value: 'msr', label: 'แม่สะเรียง แม่ฮ่องสอน', longitude: 98.2615, latitude: 18.1750, zoom: 12 }
   ], [])
 
-  // Auto-zoom to study area when selection changes
-  useEffect(() => {
-    const area = studyAreas.find(a => a.value === selectedArea)
-    if (area && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [area.longitude, area.latitude],
-        zoom: area.zoom,
-        duration: 1000
-      })
-    }
-  }, [selectedArea, studyAreas])
-
   // Fetch GEE biomass layer data
   const { loading, error, layerData } = useGEELayer('biomass', {
     area: selectedArea,
     endDate: selectedDate,
     days: daysComposite
   })
+
+  // Auto-zoom to study area using bounds from GEE data when available
+  useEffect(() => {
+    fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
+  }, [selectedArea, studyAreas, layerData])
 
   // Get area name in Thai
   const getAreaName = () => {
@@ -143,31 +137,6 @@ export default function Biomass() {
         </div>
       </div>
 
-      <div className="divider text-xs">สัญลักษณ์</div>
-
-      <div className="space-y-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-purple-600 rounded"></div>
-          <span>ต่ำ</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-purple-300 rounded"></div>
-          <span>ปานกลาง</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-yellow-100 rounded"></div>
-          <span>สูง</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-orange-300 rounded"></div>
-          <span>สูงมาก</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-3 bg-orange-600 rounded"></div>
-          <span>สูงที่สุด</span>
-        </div>
-      </div>
-
       {/* Loading/Error Status */}
       {loading && (
         <div className="mt-4 text-xs text-info">
@@ -205,29 +174,6 @@ export default function Biomass() {
     </div>
   )
 
-  const cropInfoContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Forest Type</div>
-          <div className="font-medium">Mixed Deciduous</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Stand Age</div>
-          <div className="font-medium">18 years</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Model Accuracy</div>
-          <div className="font-medium text-success">92.5%</div>
-        </div>
-        <div>
-          <div className="text-xs text-base-content/60 mb-1">Last Calibrated</div>
-          <div className="font-medium">Jan 2025</div>
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <MapLayout
       title={`${getAreaName()} - ติดตามปริมาณเชื้อเพลิง`}
@@ -236,7 +182,6 @@ export default function Biomass() {
       sidePanel={sidePanel}
       bottomPanel={
         <BottomPanel
-          cropInfo={cropInfoContent}
           chartData={chartContent}
         />
       }

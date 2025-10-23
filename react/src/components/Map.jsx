@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle } from 'react'
+import { useRef, forwardRef, useImperativeHandle, useState } from 'react'
 import Map, { NavigationControl, ScaleControl, GeolocateControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -23,6 +23,31 @@ const BASEMAP_STYLES = {
         maxzoom: 22
       }
     ]
+  },
+  light: {
+    version: 8,
+    sources: {
+      'carto-light': {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        maxzoom: 19
+      }
+    },
+    layers: [
+      {
+        id: 'carto-light',
+        type: 'raster',
+        source: 'carto-light',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
   }
 }
 
@@ -34,7 +59,8 @@ const MapComponent = forwardRef(function MapComponent({
   },
   children,
   onMapLoad,
-  className = "h-full w-full"
+  className = "h-full w-full",
+  basemap = 'satellite'
 }, ref) {
   const mapRef = useRef()
 
@@ -59,13 +85,12 @@ const MapComponent = forwardRef(function MapComponent({
       <Map
         ref={mapRef}
         initialViewState={initialViewState}
-        mapStyle={BASEMAP_STYLES.satellite}
+        mapStyle={BASEMAP_STYLES[basemap]}
         onLoad={handleMapLoad}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
         <GeolocateControl position="top-right" />
-        <ScaleControl />
 
         {children}
       </Map>
