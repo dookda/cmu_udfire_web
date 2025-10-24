@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import gee
+from app.routers import gee, hotspot
 
 app = FastAPI(
     title="CMU UDFire API",
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(gee.router)
+app.include_router(hotspot.router, prefix="/hotspot", tags=["hotspot"])
 
 @app.get("/")
 async def root():
@@ -31,7 +32,8 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "docs": "/docs",
-            "gee": "/gee"
+            "gee": "/gee",
+            "hotspot": "/hotspot"
         }
     }
 

@@ -1,146 +1,187 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import MapLayout from '../components/MapLayout'
 import Map from '../components/Map'
-import Timeline from '../components/Timeline'
 import BottomPanel from '../components/BottomPanel'
+import HexagonLayer from '../components/HexagonLayer'
+import FIRMSHotspotLayer from '../components/FIRMSHotspotLayer'
+import PredictionChart from '../components/PredictionChart'
 
 export default function HotspotPredicting() {
-  const [predictionDays, setPredictionDays] = useState(7)
-  const [confidence, setConfidence] = useState('all')
-  const [showHistorical, setShowHistorical] = useState(false)
-  const [selectedDate, setSelectedDate] = useState('2025-10-07')
+  const mapRef = useRef(null)
+  const [mapLoaded, setMapLoaded] = useState(false)
+  const [selectedMonth, setSelectedMonth] = useState('')
+  const [showHexagonLayer, setShowHexagonLayer] = useState(true)
+  const [showHotspotLayer, setShowHotspotLayer] = useState(true)
+  const [selectedHexagon, setSelectedHexagon] = useState(null)
 
-  const timelineDates = [
-    { date: '2025-09-05', cloudCover: false },
-    { date: '2025-09-17', cloudCover: true },
-    { date: '2025-10-07', cloudCover: false },
-    { date: '2025-10-17', cloudCover: false },
-    { date: '2025-10-25', cloudCover: false }
-  ]
+  // Update map pitch when month selection changes
+  useEffect(() => {
+    if (!mapRef.current) return
+
+    const map = mapRef.current.getMap ? mapRef.current.getMap() : mapRef.current
+    if (!map || typeof map.easeTo !== 'function') return
+
+    if (selectedMonth) {
+      // Show 3D view with pitch
+      map.easeTo({ pitch: 45, duration: 1000 })
+    } else {
+      // Reset to 2D view
+      map.easeTo({ pitch: 0, duration: 1000 })
+    }
+  }, [selectedMonth])
+
+  const handleHexagonClick = (feature) => {
+    const props = feature.properties
+    if (props.predictions) {
+      let predictions
+      try {
+        predictions = typeof props.predictions === 'string'
+          ? JSON.parse(props.predictions)
+          : props.predictions
+      } catch (e) {
+        predictions = props.predictions
+      }
+
+      if (Array.isArray(predictions) && predictions.length > 0) {
+        setSelectedHexagon({
+          properties: props,
+          predictions
+        })
+      }
+    }
+  }
 
   const sidePanel = (
     <div className="p-4">
-      <h3 className="font-bold mb-3 text-sm">Prediction Settings</h3>
+      <h3 className="font-bold mb-3 text-sm">การคาดการณ์จุดความร้อน</h3>
 
+      {/* Month Selector */}
       <div className="form-control mb-4">
         <label className="label">
-          <span className="label-text text-xs">Prediction Period: {predictionDays} days</span>
-        </label>
-        <input
-          type="range"
-          min="1"
-          max="30"
-          value={predictionDays}
-          className="range range-error range-xs"
-          step="1"
-          onChange={(e) => setPredictionDays(Number(e.target.value))}
-        />
-      </div>
-
-      <div className="form-control mb-4">
-        <label className="label">
-          <span className="label-text text-xs">Confidence Level</span>
+          <span className="label-text text-xs font-bold">เลือกเดือน</span>
         </label>
         <select
           className="select select-bordered select-sm"
-          value={confidence}
-          onChange={(e) => setConfidence(e.target.value)}
+          value={selectedMonth}
+          onChange={(e) => setSelectedMonth(e.target.value)}
         >
-          <option value="all">All Levels</option>
-          <option value="high">High (&gt;80%)</option>
-          <option value="medium">Medium (50-80%)</option>
-          <option value="low">Low (&lt;50%)</option>
+          <option value="">-- ดูทั้งหมด --</option>
+          <option value="2026-01-01">มกราคม 2026</option>
+          <option value="2026-02-01">กุมภาพันธ์ 2026</option>
+          <option value="2026-03-01">มีนาคม 2026</option>
+          <option value="2026-04-01">เมษายน 2026</option>
+          <option value="2026-05-01">พฤษภาคม 2026</option>
+          <option value="2026-06-01">มิถุนายน 2026</option>
+          <option value="2026-07-01">กรกฎาคม 2026</option>
+          <option value="2026-08-01">สิงหาคม 2026</option>
+          <option value="2026-09-01">กันยายน 2026</option>
+          <option value="2026-10-01">ตุลาคม 2026</option>
+          <option value="2026-11-01">พฤศจิกายน 2026</option>
+          <option value="2026-12-01">ธันวาคม 2026</option>
         </select>
       </div>
 
-      <div className="form-control mb-4">
-        <label className="label cursor-pointer">
-          <span className="label-text text-xs">Show Historical Hotspots</span>
+      <div className="divider text-xs">ชั้นข้อมูล</div>
+
+      {/* Layer Toggles */}
+      <div className="form-control mb-3">
+        <label className="label cursor-pointer justify-start gap-3">
           <input
             type="checkbox"
-            className="toggle toggle-accent toggle-sm"
-            checked={showHistorical}
-            onChange={(e) => setShowHistorical(e.target.checked)}
+            className="toggle toggle-primary toggle-sm"
+            checked={showHexagonLayer}
+            onChange={(e) => setShowHexagonLayer(e.target.checked)}
           />
+          <span className="label-text text-xs font-bold">พื้นที่ป่าไม้ (Hexagons)</span>
         </label>
       </div>
 
-      <div className="divider text-xs">Model Parameters</div>
-
-      <div className="space-y-1 text-xs">
-        <div className="flex justify-between">
-          <span>Temperature</span>
-          <span className="badge badge-xs">Active</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Humidity</span>
-          <span className="badge badge-xs">Active</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Wind Speed</span>
-          <span className="badge badge-xs">Active</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Vegetation NDVI</span>
-          <span className="badge badge-xs">Active</span>
-        </div>
-        <div className="flex justify-between">
-          <span>Historical Data</span>
-          <span className="badge badge-xs">Active</span>
-        </div>
+      <div className="form-control mb-4">
+        <label className="label cursor-pointer justify-start gap-3">
+          <input
+            type="checkbox"
+            className="toggle toggle-error toggle-sm"
+            checked={showHotspotLayer}
+            onChange={(e) => setShowHotspotLayer(e.target.checked)}
+          />
+          <span className="label-text text-xs font-bold">จุดความร้อน FIRMS (24 ชม.)</span>
+        </label>
       </div>
 
-      <button className="btn btn-primary btn-sm w-full mt-4">
-        Update Prediction
-      </button>
-      <button className="btn btn-outline btn-accent btn-sm w-full mt-2">
-        Download Alert List
-      </button>
+      {/* Legend */}
+      <div className="divider text-xs">สัญลักษณ์</div>
+
+      <div className="text-xs space-y-2">
+        <h4 className="font-bold">จำนวนจุดความร้อนที่คาดการณ์</h4>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#d7f4d7' }}></div>
+            <span>0-10 จุด (ต่ำมาก)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#b8e6b8' }}></div>
+            <span>10-25 จุด (ต่ำ)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ffe066' }}></div>
+            <span>25-50 จุด (ปานกลาง)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ffb366' }}></div>
+            <span>50-75 จุด (ค่อนข้างสูง)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ff8566' }}></div>
+            <span>75-100 จุด (สูง)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ff5566' }}></div>
+            <span>100-150 จุด (สูงมาก)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded" style={{ backgroundColor: '#cc0000' }}></div>
+            <span>150+ จุด (อันตราย)</span>
+          </div>
+        </div>
+      </div>
     </div>
   )
 
-  const chartContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">Predicted Hotspots</div>
-          <div className="stat-value text-xl text-error">23</div>
-          <div className="stat-desc">Next {predictionDays} days</div>
-        </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">Model Accuracy</div>
-          <div className="stat-value text-xl text-success">87%</div>
-          <div className="stat-desc">Last 30 days validation</div>
-        </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">High Risk Areas</div>
-          <div className="stat-value text-xl text-warning">8</div>
-          <div className="stat-desc">Immediate attention</div>
-        </div>
-      </div>
+  const chartContent = selectedHexagon ? (
+    <PredictionChart predictions={selectedHexagon.predictions} />
+  ) : (
+    <div className="flex items-center justify-center h-full text-gray-500">
+      <p>คลิกที่พื้นที่บนแผนที่เพื่อดูการคาดการณ์</p>
     </div>
   )
 
   return (
     <MapLayout
-      title="Hotspot Predicting"
-      area="200 km² coverage"
-      coordinates="18.7128° N • 98.9950° E"
       sidePanel={sidePanel}
-      timelineData={
-        <Timeline
-          dates={timelineDates}
-          selectedDate={selectedDate}
-          onDateChange={(date) => setSelectedDate(date.date)}
-        />
-      }
       bottomPanel={
-        <BottomPanel
-          chartData={chartContent}
-        />
+        <BottomPanel chartData={chartContent} />
       }
     >
-      <Map />
+      <Map
+        ref={mapRef}
+        initialViewState={{ longitude: 100.0, latitude: 18.5, zoom: 7 }}
+        onMapLoad={() => setMapLoaded(true)}
+      >
+        {mapLoaded && (
+          <>
+            <HexagonLayer
+              map={mapRef.current}
+              visible={showHexagonLayer}
+              selectedMonth={selectedMonth}
+              onHexagonClick={handleHexagonClick}
+            />
+            <FIRMSHotspotLayer
+              map={mapRef.current}
+              visible={showHotspotLayer}
+            />
+          </>
+        )}
+      </Map>
     </MapLayout>
   )
 }

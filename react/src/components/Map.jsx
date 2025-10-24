@@ -71,7 +71,7 @@ const MapComponent = forwardRef(function MapComponent({
         mapRef.current.flyTo(options)
       }
     },
-    getMap: () => mapRef.current
+    getMap: () => mapRef.current ? mapRef.current.getMap() : null
   }))
 
   const handleMapLoad = (event) => {

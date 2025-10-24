@@ -40,6 +40,7 @@ services:
       - "8000:8000"
     volumes:
       - ./fastapi:/app
+      - ./hppredict:/app/hppredict
     depends_on:
       postgis:
         condition: service_healthy
