@@ -9,19 +9,35 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
   const layerIdRef = useRef('firms-hotspot-points')
   const hasInitializedRef = useRef(false)
   const geojsonDataRef = useRef(null)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
     if (!map) return
 
     // Get the actual MapLibre map instance
     const mapInstance = map.getMap ? map.getMap() : map
-    if (!mapInstance || typeof mapInstance.addSource !== 'function') return
+    if (!mapInstance || typeof mapInstance.addSource !== 'function') {
+      console.warn('Map instance not ready or invalid')
+      return
+    }
 
     // Load FIRMS hotspot data
     const loadFIRMSData = async () => {
       try {
+        // Check if component is still mounted and map is still valid
+        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+          console.warn('Component unmounted or map instance became invalid during FIRMS data load')
+          return
+        }
+
         const response = await fetch('http://localhost:8000/hotspot/firms-hotspots')
         const geojsonData = await response.json()
+
+        // Check again if component is still mounted and map is still valid after the request
+        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+          console.warn('Component unmounted or map instance became invalid after FIRMS data load')
+          return
+        }
 
         console.log(`Loaded ${geojsonData.features?.length || 0} FIRMS hotspots`)
 
@@ -29,7 +45,7 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
         geojsonDataRef.current = geojsonData
 
         // Add source
-        if (!mapInstance.getSource(sourceIdRef.current)) {
+        if (mapInstance && typeof mapInstance.getSource === 'function' && !mapInstance.getSource(sourceIdRef.current)) {
           mapInstance.addSource(sourceIdRef.current, {
             type: 'geojson',
             data: geojsonData
@@ -37,7 +53,7 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
         }
 
         // Add hotspot circle layer
-        if (!mapInstance.getLayer(layerIdRef.current)) {
+        if (mapInstance && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(layerIdRef.current)) {
           mapInstance.addLayer({
             id: layerIdRef.current,
             type: 'circle',
@@ -76,16 +92,21 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
           })
         }
 
-        // Add click handler
-        mapInstance.on('click', layerIdRef.current, handleClick)
+        // Add click handler and cursor pointer
+        if (mapInstance && typeof mapInstance.on === 'function') {
+          mapInstance.on('click', layerIdRef.current, handleClick)
 
-        // Add cursor pointer
-        mapInstance.on('mouseenter', layerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = 'pointer'
-        })
-        mapInstance.on('mouseleave', layerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = ''
-        })
+          mapInstance.on('mouseenter', layerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = 'pointer'
+            }
+          })
+          mapInstance.on('mouseleave', layerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = ''
+            }
+          })
+        }
 
         hasInitializedRef.current = true
       } catch (error) {
@@ -142,10 +163,10 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
     }
 
     const addLayer = () => {
-      if (!geojsonDataRef.current) return
+      if (!geojsonDataRef.current || !mapInstance) return
 
       // Add source if missing
-      if (!mapInstance.getSource(sourceIdRef.current)) {
+      if (typeof mapInstance.getSource === 'function' && !mapInstance.getSource(sourceIdRef.current)) {
         console.log('Re-adding FIRMS source after basemap change')
         mapInstance.addSource(sourceIdRef.current, {
           type: 'geojson',
@@ -154,7 +175,7 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
       }
 
       // Add layer if missing
-      if (!mapInstance.getLayer(layerIdRef.current)) {
+      if (typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(layerIdRef.current)) {
         console.log('Re-adding FIRMS layer after basemap change')
         mapInstance.addLayer({
           id: layerIdRef.current,
@@ -196,11 +217,11 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
     }
 
     const handleStyleData = (e) => {
-      if (e.dataType === 'style' && hasInitializedRef.current) {
+      if (e.dataType === 'style' && hasInitializedRef.current && mapInstance && typeof mapInstance.getLayer === 'function') {
         const layerMissing = !mapInstance.getLayer(layerIdRef.current)
         if (layerMissing) {
           setTimeout(() => {
-            if (mapInstance.isStyleLoaded() && !mapInstance.getLayer(layerIdRef.current)) {
+            if (mapInstance && typeof mapInstance.isStyleLoaded === 'function' && mapInstance.isStyleLoaded() && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(layerIdRef.current)) {
               addLayer()
             }
           }, 100)
@@ -221,11 +242,17 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
 
     // Cleanup
     return () => {
-      mapInstance.off('styledata', handleStyleData)
-      if (mapInstance.getLayer(layerIdRef.current)) {
-        mapInstance.off('click', layerIdRef.current, handleClick)
-        mapInstance.off('mouseenter', layerIdRef.current)
-        mapInstance.off('mouseleave', layerIdRef.current)
+      isMountedRef.current = false
+      try {
+        if (!mapInstance || typeof mapInstance.off !== 'function') return;
+        mapInstance.off('styledata', handleStyleData)
+        if (typeof mapInstance.getLayer === 'function' && mapInstance.getLayer(layerIdRef.current)) {
+          mapInstance.off('click', layerIdRef.current, handleClick)
+          mapInstance.off('mouseenter', layerIdRef.current)
+          mapInstance.off('mouseleave', layerIdRef.current)
+        }
+      } catch (error) {
+        console.warn('Error during FIRMSHotspotLayer cleanup:', error)
       }
     }
   }, [map, visible])

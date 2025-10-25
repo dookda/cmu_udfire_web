@@ -6,6 +6,7 @@ import GEETileLayer from '../components/GEETileLayer'
 import LayerLegend from '../components/LayerLegend'
 import { useGEELayer } from '../hooks/useGEELayer'
 import { fitMapToBounds } from '../utils/mapUtils'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 export default function FloodSim() {
   const [beforeDate, setBeforeDate] = useState('2024-08-01')
@@ -177,35 +178,37 @@ export default function FloodSim() {
   )
 
   return (
-    <MapLayout
-      title={`${getAreaName()} - การวิเคราะห์น้ำท่วม`}
-      area="ข้อมูล: Sentinel-1"
-      coordinates="18.7128° N • 98.9950° E"
-      sidePanel={sidePanel}
-      bottomPanel={
-        <BottomPanel
-          chartData={chartContent}
-        />
-      }
-    >
-      <Map ref={mapRef}>
-        {/* Render GEE Flood Layer */}
-        {analysisRun && showLayer && layerData && layerData.tile_url && (
-          <>
-            <GEETileLayer
-              tileUrl={layerData.tile_url}
-              opacity={0.7}
-            />
-            {/* Layer Legend - Bottom Left */}
-            <div className="absolute bottom-4 left-2 sm:left-4 z-10">
-              <LayerLegend
-                layerType="flood"
-                visParams={layerData.vis_params}
+    <ErrorBoundary>
+      <MapLayout
+        title={`${getAreaName()} - การวิเคราะห์น้ำท่วม`}
+        area="ข้อมูล: Sentinel-1"
+        coordinates="18.7128° N • 98.9950° E"
+        sidePanel={sidePanel}
+        bottomPanel={
+          <BottomPanel
+            chartData={chartContent}
+          />
+        }
+      >
+        <Map key="flood-map" ref={mapRef}>
+          {/* Render GEE Flood Layer */}
+          {analysisRun && showLayer && layerData && layerData.tile_url && (
+            <>
+              <GEETileLayer
+                tileUrl={layerData.tile_url}
+                opacity={0.7}
               />
-            </div>
-          </>
-        )}
-      </Map>
-    </MapLayout>
+              {/* Layer Legend - Bottom Left */}
+              <div className="absolute bottom-4 left-2 sm:left-4 z-10">
+                <LayerLegend
+                  layerType="flood"
+                  visParams={layerData.vis_params}
+                />
+              </div>
+            </>
+          )}
+        </Map>
+      </MapLayout>
+    </ErrorBoundary>
   )
 }

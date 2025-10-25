@@ -1,4 +1,5 @@
 ui.root.clear();
+
 var map = ui.Map();
 var GRAYMAP = [
     {

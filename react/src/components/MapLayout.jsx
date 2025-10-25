@@ -18,22 +18,44 @@ export default function MapLayout({
     <div className="h-screen flex flex-col bg-base-200">
       {/* Top Toolbar */}
       <div className="bg-base-300 border-b border-base-content/10 px-2 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between z-20">
-        {/* Side Panel Toggle Button */}
-        <button
-          className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
-          onClick={() => setShowSidePanel(!showSidePanel)}
-          title={showSidePanel ? 'ซ่อนแผง' : 'แสดงแผง'}
-        >
-          {showSidePanel ? (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
+        {/* Left side buttons */}
+        <div className="flex gap-2 items-center">
+          {/* Side Panel Toggle Button */}
+          <button
+            className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
+            onClick={() => setShowSidePanel(!showSidePanel)}
+            title={showSidePanel ? 'ซ่อนแผง' : 'แสดงแผง'}
+          >
+            {showSidePanel ? (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            )}
+          </button>
+
+          {/* Chart Panel Toggle Button */}
+          {bottomPanel && (
+            <button
+              className="btn btn-ghost btn-xs sm:btn-sm btn-circle flex-shrink-0"
+              onClick={() => setShowBottomPanel(!showBottomPanel)}
+              title={showBottomPanel ? 'ซ่อนกราฟ' : 'แสดงกราฟ'}
+            >
+              {showBottomPanel ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                </svg>
+              )}
+            </button>
           )}
-        </button>
+        </div>
 
         {/* Basemap Switcher */}
         <div className="flex gap-1 flex-shrink-0">

@@ -10,20 +10,36 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
   const fill3DLayerIdRef = useRef('hexagon-extrusion')
   const hasInitializedRef = useRef(false)
   const geojsonDataRef = useRef(null)
+  const isMountedRef = useRef(true)
 
   useEffect(() => {
     if (!map) return
 
     // Get the actual MapLibre map instance
     const mapInstance = map.getMap ? map.getMap() : map
-    if (!mapInstance || typeof mapInstance.addSource !== 'function') return
+    if (!mapInstance || typeof mapInstance.addSource !== 'function') {
+      console.warn('Map instance not ready or invalid')
+      return
+    }
 
     // Load hexagon data
     const loadHexagonData = async () => {
       try {
+        // Check if component is still mounted and map is still valid
+        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+          console.warn('Component unmounted or map instance became invalid during data load')
+          return
+        }
+
         console.log('Loading hexagon data...')
         const response = await fetch('http://localhost:8000/hotspot/hexagon-predictions')
         const geojsonData = await response.json()
+
+        // Check again if component is still mounted and map is still valid after the request
+        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+          console.warn('Component unmounted or map instance became invalid after data load')
+          return
+        }
 
         console.log(`Loaded ${geojsonData.features?.length || 0} hexagon features`)
 
@@ -53,7 +69,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         geojsonDataRef.current = geojsonData
 
         // Add source
-        if (!mapInstance.getSource(sourceIdRef.current)) {
+        if (mapInstance && typeof mapInstance.getSource === 'function' && !mapInstance.getSource(sourceIdRef.current)) {
           console.log('Adding hexagon source to map')
           mapInstance.addSource(sourceIdRef.current, {
             type: 'geojson',
@@ -62,7 +78,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         }
 
         // Add 2D fill layer (for default view without month selection)
-        if (!mapInstance.getLayer(fill2DLayerIdRef.current)) {
+        if (mapInstance && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(fill2DLayerIdRef.current)) {
           console.log('Adding 2D hexagon layer to map')
           mapInstance.addLayer({
             id: fill2DLayerIdRef.current,
@@ -96,7 +112,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         }
 
         // Add 3D extrusion layer (for month-specific predictions)
-        if (!mapInstance.getLayer(fill3DLayerIdRef.current)) {
+        if (mapInstance && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(fill3DLayerIdRef.current)) {
           console.log('Adding 3D hexagon extrusion layer to map')
           mapInstance.addLayer({
             id: fill3DLayerIdRef.current,
@@ -114,23 +130,32 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
           })
         }
 
-        // Add click handlers
-        mapInstance.on('click', fill2DLayerIdRef.current, handleClick)
-        mapInstance.on('click', fill3DLayerIdRef.current, handleClick)
+        // Add click handlers and cursor pointers
+        if (mapInstance && typeof mapInstance.on === 'function') {
+          mapInstance.on('click', fill2DLayerIdRef.current, handleClick)
+          mapInstance.on('click', fill3DLayerIdRef.current, handleClick)
 
-        // Add cursor pointers
-        mapInstance.on('mouseenter', fill2DLayerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = 'pointer'
-        })
-        mapInstance.on('mouseenter', fill3DLayerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = 'pointer'
-        })
-        mapInstance.on('mouseleave', fill2DLayerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = ''
-        })
-        mapInstance.on('mouseleave', fill3DLayerIdRef.current, () => {
-          mapInstance.getCanvas().style.cursor = ''
-        })
+          mapInstance.on('mouseenter', fill2DLayerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = 'pointer'
+            }
+          })
+          mapInstance.on('mouseenter', fill3DLayerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = 'pointer'
+            }
+          })
+          mapInstance.on('mouseleave', fill2DLayerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = ''
+            }
+          })
+          mapInstance.on('mouseleave', fill3DLayerIdRef.current, () => {
+            if (mapInstance && mapInstance.getCanvas()) {
+              mapInstance.getCanvas().style.cursor = ''
+            }
+          })
+        }
 
         hasInitializedRef.current = true
         console.log('Hexagon layer initialized successfully')
@@ -215,7 +240,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
       if (e.dataType === 'style' && hasInitializedRef.current) {
         console.log('Style changed, checking if layers need to be re-added...')
         const layerMissing = !mapInstance.getLayer(fill2DLayerIdRef.current) ||
-                            !mapInstance.getLayer(fill3DLayerIdRef.current)
+          !mapInstance.getLayer(fill3DLayerIdRef.current)
         console.log('Layers missing:', layerMissing)
         if (layerMissing) {
           setTimeout(() => {
@@ -246,16 +271,24 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     // Cleanup
     return () => {
-      mapInstance.off('styledata', handleStyleData)
-      if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
-        mapInstance.off('click', fill2DLayerIdRef.current, handleClick)
-        mapInstance.off('mouseenter', fill2DLayerIdRef.current)
-        mapInstance.off('mouseleave', fill2DLayerIdRef.current)
-      }
-      if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
-        mapInstance.off('click', fill3DLayerIdRef.current, handleClick)
-        mapInstance.off('mouseenter', fill3DLayerIdRef.current)
-        mapInstance.off('mouseleave', fill3DLayerIdRef.current)
+      isMountedRef.current = false
+      try {
+        if (!mapInstance || typeof mapInstance.off !== 'function') return;
+        mapInstance.off('styledata', handleStyleData)
+        if (typeof mapInstance.getLayer === 'function') {
+          if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
+            mapInstance.off('click', fill2DLayerIdRef.current, handleClick)
+            mapInstance.off('mouseenter', fill2DLayerIdRef.current)
+            mapInstance.off('mouseleave', fill2DLayerIdRef.current)
+          }
+          if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
+            mapInstance.off('click', fill3DLayerIdRef.current, handleClick)
+            mapInstance.off('mouseenter', fill3DLayerIdRef.current)
+            mapInstance.off('mouseleave', fill3DLayerIdRef.current)
+          }
+        }
+      } catch (error) {
+        console.warn('Error during HexagonLayer cleanup:', error)
       }
     }
   }, [map, onHexagonClick, selectedMonth, visible])

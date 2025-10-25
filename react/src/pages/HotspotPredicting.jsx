@@ -5,6 +5,7 @@ import BottomPanel from '../components/BottomPanel'
 import HexagonLayer from '../components/HexagonLayer'
 import FIRMSHotspotLayer from '../components/FIRMSHotspotLayer'
 import PredictionChart from '../components/PredictionChart'
+import ErrorBoundary from '../components/ErrorBoundary'
 
 export default function HotspotPredicting() {
   const mapRef = useRef(null)
@@ -156,32 +157,35 @@ export default function HotspotPredicting() {
   )
 
   return (
-    <MapLayout
-      sidePanel={sidePanel}
-      bottomPanel={
-        <BottomPanel chartData={chartContent} />
-      }
-    >
-      <Map
-        ref={mapRef}
-        initialViewState={{ longitude: 100.0, latitude: 18.5, zoom: 7 }}
-        onMapLoad={() => setMapLoaded(true)}
+    <ErrorBoundary>
+      <MapLayout
+        sidePanel={sidePanel}
+        bottomPanel={
+          <BottomPanel chartData={chartContent} />
+        }
       >
-        {mapLoaded && (
-          <>
-            <HexagonLayer
-              map={mapRef.current}
-              visible={showHexagonLayer}
-              selectedMonth={selectedMonth}
-              onHexagonClick={handleHexagonClick}
-            />
-            <FIRMSHotspotLayer
-              map={mapRef.current}
-              visible={showHotspotLayer}
-            />
-          </>
-        )}
-      </Map>
-    </MapLayout>
+        <Map
+          key="hotspot-map"
+          ref={mapRef}
+          initialViewState={{ longitude: 100.0, latitude: 18.5, zoom: 7 }}
+          onMapLoad={() => setMapLoaded(true)}
+        >
+          {mapRef.current && (
+            <>
+              <HexagonLayer
+                map={mapRef.current}
+                visible={showHexagonLayer}
+                selectedMonth={selectedMonth}
+                onHexagonClick={handleHexagonClick}
+              />
+              <FIRMSHotspotLayer
+                map={mapRef.current}
+                visible={showHotspotLayer}
+              />
+            </>
+          )}
+        </Map>
+      </MapLayout>
+    </ErrorBoundary>
   )
 }
