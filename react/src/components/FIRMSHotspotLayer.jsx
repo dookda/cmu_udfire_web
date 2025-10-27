@@ -26,7 +26,6 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
       try {
         // Check if component is still mounted and map is still valid
         if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
-          console.warn('Component unmounted or map instance became invalid during FIRMS data load')
           return
         }
 
@@ -35,7 +34,6 @@ export default function FIRMSHotspotLayer({ map, visible = true }) {
 
         // Check again if component is still mounted and map is still valid after the request
         if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
-          console.warn('Component unmounted or map instance became invalid after FIRMS data load')
           return
         }
 

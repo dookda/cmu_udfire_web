@@ -11,6 +11,12 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
   const hasInitializedRef = useRef(false)
   const geojsonDataRef = useRef(null)
   const isMountedRef = useRef(true)
+  const onHexagonClickRef = useRef(onHexagonClick)
+
+  // Keep the callback ref up to date
+  useEffect(() => {
+    onHexagonClickRef.current = onHexagonClick
+  }, [onHexagonClick])
 
   useEffect(() => {
     if (!map) return
@@ -27,7 +33,6 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
       try {
         // Check if component is still mounted and map is still valid
         if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
-          console.warn('Component unmounted or map instance became invalid during data load')
           return
         }
 
@@ -37,14 +42,18 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
         // Check again if component is still mounted and map is still valid after the request
         if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
-          console.warn('Component unmounted or map instance became invalid after data load')
           return
         }
 
         console.log(`Loaded ${geojsonData.features?.length || 0} hexagon features`)
 
+        // Log first feature to check data structure
+        if (geojsonData.features?.length > 0) {
+          console.log('First feature sample:', geojsonData.features[0])
+        }
+
         // Process features to add simplified prediction properties
-        geojsonData.features.forEach(feature => {
+        geojsonData.features.forEach((feature, index) => {
           if (feature.properties.predictions) {
             let predictions
             try {
@@ -61,6 +70,12 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
                 const monthKey = `pred_${pred.date.replace(/-/g, '_')}`
                 feature.properties[monthKey] = pred.predicted_hotspot_count
               })
+
+              // Log first processed feature
+              if (index === 0) {
+                console.log('First feature after processing:', feature.properties)
+                console.log('Available month keys:', Object.keys(feature.properties).filter(k => k.startsWith('pred_')))
+              }
             }
           }
         })
@@ -75,6 +90,9 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
             type: 'geojson',
             data: geojsonData
           })
+          console.log('Source added successfully')
+        } else {
+          console.log('Source already exists or map not ready')
         }
 
         // Add 2D fill layer (for default view without month selection)
@@ -109,6 +127,9 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
               visibility: 'visible'
             }
           })
+          console.log('2D layer added successfully')
+        } else {
+          console.log('2D layer already exists or map not ready')
         }
 
         // Add 3D extrusion layer (for month-specific predictions)
@@ -128,6 +149,9 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
               visibility: 'none'
             }
           })
+          console.log('3D layer added successfully')
+        } else {
+          console.log('3D layer already exists or map not ready')
         }
 
         // Add click handlers and cursor pointers
@@ -165,8 +189,8 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
     }
 
     const handleClick = (e) => {
-      if (e.features && e.features.length > 0 && onHexagonClick) {
-        onHexagonClick(e.features[0])
+      if (e.features && e.features.length > 0 && onHexagonClickRef.current) {
+        onHexagonClickRef.current(e.features[0])
       }
     }
 
@@ -291,7 +315,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         console.warn('Error during HexagonLayer cleanup:', error)
       }
     }
-  }, [map, onHexagonClick, selectedMonth, visible])
+  }, [map])
 
   // Update layer visibility
   useEffect(() => {
@@ -304,19 +328,25 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     if (selectedMonth) {
       // Show 3D layer when month is selected
+      console.log('Switching to 3D view for month:', selectedMonth)
       if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill2DLayerIdRef.current, 'visibility', 'none')
+        console.log('Hidden 2D layer')
       }
       if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill3DLayerIdRef.current, 'visibility', visibility)
+        console.log('Set 3D layer visibility to:', visibility)
       }
     } else {
       // Show 2D layer when no month selected
+      console.log('Switching to 2D view (no month selected)')
       if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill2DLayerIdRef.current, 'visibility', visibility)
+        console.log('Set 2D layer visibility to:', visibility)
       }
       if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill3DLayerIdRef.current, 'visibility', 'none')
+        console.log('Hidden 3D layer')
       }
     }
   }, [map, visible, selectedMonth])
@@ -329,6 +359,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
     if (!mapInstance || typeof mapInstance.setPaintProperty !== 'function') return
 
     const monthKey = `pred_${selectedMonth.replace(/-/g, '_')}`
+    console.log('Updating colors for month:', selectedMonth, 'using key:', monthKey)
 
     const fillColorExpression = [
       'case',
@@ -371,11 +402,13 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
       mapInstance.setPaintProperty(fill2DLayerIdRef.current, 'fill-color', fillColorExpression)
+      console.log('Updated 2D layer colors')
     }
 
     if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
       mapInstance.setPaintProperty(fill3DLayerIdRef.current, 'fill-extrusion-color', fillColorExpression)
       mapInstance.setPaintProperty(fill3DLayerIdRef.current, 'fill-extrusion-height', extrusionHeightExpression)
+      console.log('Updated 3D layer colors and heights')
     }
   }, [map, selectedMonth])
 

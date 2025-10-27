@@ -36,7 +36,7 @@ const BASEMAP_STYLES = {
         ],
         tileSize: 256,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxzoom: 19
+        maxzoom: 22
       }
     },
     layers: [
