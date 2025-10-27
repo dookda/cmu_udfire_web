@@ -10,7 +10,6 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
   const fill3DLayerIdRef = useRef('hexagon-extrusion')
   const hasInitializedRef = useRef(false)
   const geojsonDataRef = useRef(null)
-  const isMountedRef = useRef(true)
   const onHexagonClickRef = useRef(onHexagonClick)
 
   // Keep the callback ref up to date
@@ -20,6 +19,8 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
   useEffect(() => {
     if (!map) return
+
+    let isMounted = true
 
     // Get the actual MapLibre map instance
     const mapInstance = map.getMap ? map.getMap() : map
@@ -32,7 +33,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
     const loadHexagonData = async () => {
       try {
         // Check if component is still mounted and map is still valid
-        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+        if (!isMounted || !mapInstance || typeof mapInstance.addSource !== 'function') {
           return
         }
 
@@ -41,19 +42,14 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         const geojsonData = await response.json()
 
         // Check again if component is still mounted and map is still valid after the request
-        if (!isMountedRef.current || !mapInstance || typeof mapInstance.addSource !== 'function') {
+        if (!isMounted || !mapInstance || typeof mapInstance.addSource !== 'function') {
           return
         }
 
-        console.log(`Loaded ${geojsonData.features?.length || 0} hexagon features`)
-
-        // Log first feature to check data structure
-        if (geojsonData.features?.length > 0) {
-          console.log('First feature sample:', geojsonData.features[0])
-        }
+        console.log(`✓ Loaded ${geojsonData.features?.length || 0} hexagon features`)
 
         // Process features to add simplified prediction properties
-        geojsonData.features.forEach((feature, index) => {
+        geojsonData.features.forEach((feature) => {
           if (feature.properties.predictions) {
             let predictions
             try {
@@ -70,12 +66,6 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
                 const monthKey = `pred_${pred.date.replace(/-/g, '_')}`
                 feature.properties[monthKey] = pred.predicted_hotspot_count
               })
-
-              // Log first processed feature
-              if (index === 0) {
-                console.log('First feature after processing:', feature.properties)
-                console.log('Available month keys:', Object.keys(feature.properties).filter(k => k.startsWith('pred_')))
-              }
             }
           }
         })
@@ -85,19 +75,15 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
         // Add source
         if (mapInstance && typeof mapInstance.getSource === 'function' && !mapInstance.getSource(sourceIdRef.current)) {
-          console.log('Adding hexagon source to map')
           mapInstance.addSource(sourceIdRef.current, {
             type: 'geojson',
             data: geojsonData
           })
-          console.log('Source added successfully')
-        } else {
-          console.log('Source already exists or map not ready')
+          console.log('✓ Added hexagon source')
         }
 
         // Add 2D fill layer (for default view without month selection)
         if (mapInstance && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(fill2DLayerIdRef.current)) {
-          console.log('Adding 2D hexagon layer to map')
           mapInstance.addLayer({
             id: fill2DLayerIdRef.current,
             type: 'fill',
@@ -127,14 +113,11 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
               visibility: 'visible'
             }
           })
-          console.log('2D layer added successfully')
-        } else {
-          console.log('2D layer already exists or map not ready')
+          console.log('✓ Added 2D fill layer')
         }
 
         // Add 3D extrusion layer (for month-specific predictions)
         if (mapInstance && typeof mapInstance.getLayer === 'function' && !mapInstance.getLayer(fill3DLayerIdRef.current)) {
-          console.log('Adding 3D hexagon extrusion layer to map')
           mapInstance.addLayer({
             id: fill3DLayerIdRef.current,
             type: 'fill-extrusion',
@@ -149,9 +132,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
               visibility: 'none'
             }
           })
-          console.log('3D layer added successfully')
-        } else {
-          console.log('3D layer already exists or map not ready')
+          console.log('✓ Added 3D extrusion layer')
         }
 
         // Add click handlers and cursor pointers
@@ -295,7 +276,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     // Cleanup
     return () => {
-      isMountedRef.current = false
+      isMounted = false
       try {
         if (!mapInstance || typeof mapInstance.off !== 'function') return;
         mapInstance.off('styledata', handleStyleData)
@@ -328,25 +309,21 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     if (selectedMonth) {
       // Show 3D layer when month is selected
-      console.log('Switching to 3D view for month:', selectedMonth)
+      console.log(`→ Switching to 3D view (month: ${selectedMonth})`)
       if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill2DLayerIdRef.current, 'visibility', 'none')
-        console.log('Hidden 2D layer')
       }
       if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill3DLayerIdRef.current, 'visibility', visibility)
-        console.log('Set 3D layer visibility to:', visibility)
       }
     } else {
       // Show 2D layer when no month selected
-      console.log('Switching to 2D view (no month selected)')
+      console.log('→ Switching to 2D view')
       if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill2DLayerIdRef.current, 'visibility', visibility)
-        console.log('Set 2D layer visibility to:', visibility)
       }
       if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
         mapInstance.setLayoutProperty(fill3DLayerIdRef.current, 'visibility', 'none')
-        console.log('Hidden 3D layer')
       }
     }
   }, [map, visible, selectedMonth])
@@ -359,7 +336,7 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
     if (!mapInstance || typeof mapInstance.setPaintProperty !== 'function') return
 
     const monthKey = `pred_${selectedMonth.replace(/-/g, '_')}`
-    console.log('Updating colors for month:', selectedMonth, 'using key:', monthKey)
+    console.log(`→ Updating colors (key: ${monthKey})`)
 
     const fillColorExpression = [
       'case',
@@ -402,14 +379,13 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     if (mapInstance.getLayer(fill2DLayerIdRef.current)) {
       mapInstance.setPaintProperty(fill2DLayerIdRef.current, 'fill-color', fillColorExpression)
-      console.log('Updated 2D layer colors')
     }
 
     if (mapInstance.getLayer(fill3DLayerIdRef.current)) {
       mapInstance.setPaintProperty(fill3DLayerIdRef.current, 'fill-extrusion-color', fillColorExpression)
       mapInstance.setPaintProperty(fill3DLayerIdRef.current, 'fill-extrusion-height', extrusionHeightExpression)
-      console.log('Updated 3D layer colors and heights')
     }
+    console.log('✓ Updated layer styles')
   }, [map, selectedMonth])
 
   return null
