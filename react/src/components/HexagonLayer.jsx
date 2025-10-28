@@ -48,6 +48,12 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
         console.log(`✓ Loaded ${geojsonData.features?.length || 0} hexagon features`)
 
+        // Log sample feature to understand data structure
+        if (geojsonData.features?.length > 0) {
+          const sampleProps = geojsonData.features[0].properties
+          console.log('Sample feature properties:', Object.keys(sampleProps))
+        }
+
         // Process features to add simplified prediction properties
         geojsonData.features.forEach((feature) => {
           if (feature.properties.predictions) {
@@ -163,15 +169,43 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
         }
 
         hasInitializedRef.current = true
-        console.log('Hexagon layer initialized successfully')
+        console.log('✓ Hexagon layer initialized successfully')
       } catch (error) {
         console.error('Error loading hexagon data:', error)
       }
     }
 
     const handleClick = (e) => {
-      if (e.features && e.features.length > 0 && onHexagonClickRef.current) {
-        onHexagonClickRef.current(e.features[0])
+      console.log(e);
+
+      if (!e.features?.length || !geojsonDataRef.current || !onHexagonClickRef.current) return
+
+      const clickedProps = e.features[0].properties
+
+      // Find the unique identifier - check common ID fields
+      const idField = clickedProps.id || clickedProps.OBJECTID || clickedProps.FID ||
+        clickedProps.gid || clickedProps.Shape_Area
+
+      if (!idField) {
+        console.warn('⚠️ No unique identifier found in clicked feature')
+        return
+      }
+
+      console.log('🔵 Hexagon clicked - ID:', idField)
+
+      // Find the original feature from stored data using the ID
+      const originalFeature = geojsonDataRef.current.features.find(f => {
+        const props = f.properties
+        return props.id === idField || props.OBJECTID === idField ||
+          props.FID === idField || props.gid === idField ||
+          props.Shape_Area === idField
+      })
+
+      if (originalFeature?.properties?.predictions) {
+        console.log('✓ Found feature with predictions')
+        onHexagonClickRef.current(originalFeature)
+      } else {
+        console.warn('⚠️ Feature not found or has no predictions')
       }
     }
 
@@ -337,6 +371,13 @@ export default function HexagonLayer({ map, visible = true, selectedMonth, onHex
 
     const monthKey = `pred_${selectedMonth.replace(/-/g, '_')}`
     console.log(`→ Updating colors (key: ${monthKey})`)
+
+    // Debug: Check if the property exists in the data
+    if (geojsonDataRef.current?.features?.length > 0) {
+      const sampleFeature = geojsonDataRef.current.features[0]
+      console.log('Sample feature properties:', Object.keys(sampleFeature.properties))
+      console.log(`Value for ${monthKey}:`, sampleFeature.properties[monthKey])
+    }
 
     const fillColorExpression = [
       'case',

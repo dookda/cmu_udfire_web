@@ -10,7 +10,7 @@ import ErrorBoundary from '../components/ErrorBoundary'
 export default function HotspotPredicting() {
   const mapRef = useRef(null)
   const [mapLoaded, setMapLoaded] = useState(false)
-  const [selectedMonth, setSelectedMonth] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('2026-01-01')
   const [showHexagonLayer, setShowHexagonLayer] = useState(true)
   const [showHotspotLayer, setShowHotspotLayer] = useState(true)
   const [selectedHexagon, setSelectedHexagon] = useState(null)
@@ -33,23 +33,28 @@ export default function HotspotPredicting() {
 
   const handleHexagonClick = (feature) => {
     const props = feature.properties
-    if (props.predictions) {
-      let predictions
-      try {
-        predictions = typeof props.predictions === 'string'
-          ? JSON.parse(props.predictions)
-          : props.predictions
-      } catch (e) {
-        predictions = props.predictions
-      }
 
-      if (Array.isArray(predictions) && predictions.length > 0) {
-        setSelectedHexagon({
-          properties: props,
-          predictions
-        })
-      }
+    // Parse predictions if it's a string
+    const predictions = typeof props.predictions === 'string'
+      ? JSON.parse(props.predictions)
+      : props.predictions
+
+    if (!Array.isArray(predictions) || predictions.length === 0) {
+      console.warn('❌ Invalid predictions data')
+      return
     }
+
+    // Get unique ID for the hexagon
+    const hexagonId = props.id || props.OBJECTID || props.FID || props.gid || Date.now()
+
+    console.log('✅ Hexagon selected - ID:', hexagonId, '- Predictions:', predictions.length, 'months')
+
+    // Set selected hexagon with unique key for React re-rendering
+    setSelectedHexagon({
+      id: hexagonId,
+      timestamp: Date.now(),
+      predictions
+    })
   }
 
   const sidePanel = (
@@ -149,7 +154,10 @@ export default function HotspotPredicting() {
   )
 
   const chartContent = selectedHexagon ? (
-    <PredictionChart predictions={selectedHexagon.predictions} />
+    <PredictionChart
+      key={`${selectedHexagon.id}-${selectedHexagon.timestamp}`}
+      predictions={selectedHexagon.predictions}
+    />
   ) : (
     <div className="flex items-center justify-center h-full text-gray-500">
       <p>คลิกที่พื้นที่บนแผนที่เพื่อดูการคาดการณ์</p>

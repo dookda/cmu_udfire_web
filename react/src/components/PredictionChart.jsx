@@ -14,6 +14,7 @@ export default function PredictionChart({ predictions }) {
     if (!predictions || predictions.length === 0) return {}
 
     const values = predictions.map(p => Math.round(p.predicted_hotspot_count))
+    console.log('📈 Chart updated - Values:', values)
     const months = predictions.map(p => {
       const monthIndex = new Date(p.date).getMonth()
       return monthAbbr[monthIndex]
