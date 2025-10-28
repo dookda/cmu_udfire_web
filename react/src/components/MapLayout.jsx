@@ -10,7 +10,7 @@ export default function MapLayout({
   bottomPanel
 }) {
   const { theme, toggleTheme } = useTheme()
-  const [showSidePanel, setShowSidePanel] = useState(false)
+  const [showSidePanel, setShowSidePanel] = useState(true)
   const [showBottomPanel, setShowBottomPanel] = useState(true)
   const [basemap, setBasemap] = useState('satellite')
 
