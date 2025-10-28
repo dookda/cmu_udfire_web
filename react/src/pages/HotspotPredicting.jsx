@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Popup } from 'react-map-gl/maplibre'
 import MapLayout from '../components/MapLayout'
 import Map from '../components/Map'
 import BottomPanel from '../components/BottomPanel'
@@ -14,6 +15,8 @@ export default function HotspotPredicting() {
   const [showHexagonLayer, setShowHexagonLayer] = useState(true)
   const [showHotspotLayer, setShowHotspotLayer] = useState(true)
   const [selectedHexagon, setSelectedHexagon] = useState(null)
+  const [popupInfo, setPopupInfo] = useState(null)
+  const [isHexagonLoading, setIsHexagonLoading] = useState(false)
 
   // Update map pitch when month selection changes
   useEffect(() => {
@@ -31,16 +34,27 @@ export default function HotspotPredicting() {
     }
   }, [selectedMonth])
 
-  const handleHexagonClick = (feature) => {
+  const handleHexagonClick = (feature, lngLat) => {
+    console.log('🟢 handleHexagonClick called in HotspotPredicting')
+    console.log('🟢 Feature received:', feature)
+    console.log('🟢 lngLat:', lngLat)
+
     const props = feature.properties
 
     // Parse predictions if it's a string
-    const predictions = typeof props.predictions === 'string'
-      ? JSON.parse(props.predictions)
-      : props.predictions
+    let predictions
+    try {
+      predictions = typeof props.predictions === 'string'
+        ? JSON.parse(props.predictions)
+        : props.predictions
+      console.log('🟢 Parsed predictions:', predictions)
+    } catch (error) {
+      console.error('❌ Error parsing predictions:', error)
+      return
+    }
 
     if (!Array.isArray(predictions) || predictions.length === 0) {
-      console.warn('❌ Invalid predictions data')
+      console.warn('❌ Invalid predictions data:', predictions)
       return
     }
 
@@ -50,11 +64,24 @@ export default function HotspotPredicting() {
     console.log('✅ Hexagon selected - ID:', hexagonId, '- Predictions:', predictions.length, 'months')
 
     // Set selected hexagon with unique key for React re-rendering
-    setSelectedHexagon({
+    const hexagonData = {
       id: hexagonId,
       timestamp: Date.now(),
       predictions
+    }
+    console.log('🟢 Setting selectedHexagon to:', hexagonData)
+    setSelectedHexagon(hexagonData)
+
+    // Set popup info
+    setPopupInfo({
+      longitude: lngLat.lng,
+      latitude: lngLat.lat,
+      properties: props
     })
+  }
+
+  const handleHexagonLoadingChange = (loading) => {
+    setIsHexagonLoading(loading)
   }
 
   const sidePanel = (
@@ -153,6 +180,10 @@ export default function HotspotPredicting() {
     </div>
   )
 
+  console.log('🎯 HotspotPredicting render')
+  console.log('  - selectedHexagon:', selectedHexagon)
+  console.log('  - selectedHexagon?.predictions:', selectedHexagon?.predictions)
+
   const chartContent = selectedHexagon ? (
     <PredictionChart
       key={`${selectedHexagon.id}-${selectedHexagon.timestamp}`}
@@ -163,6 +194,9 @@ export default function HotspotPredicting() {
       <p>คลิกที่พื้นที่บนแผนที่เพื่อดูการคาดการณ์</p>
     </div>
   )
+
+  console.log('🎯 chartContent type:', typeof chartContent)
+  console.log('🎯 chartContent:', chartContent)
 
   return (
     <ErrorBoundary>
@@ -178,19 +212,40 @@ export default function HotspotPredicting() {
           initialViewState={{ longitude: 100.0, latitude: 18.5, zoom: 7 }}
           onMapLoad={() => setMapLoaded(true)}
         >
-          {mapRef.current && (
-            <>
-              <HexagonLayer
-                map={mapRef.current}
-                visible={showHexagonLayer}
-                selectedMonth={selectedMonth}
-                onHexagonClick={handleHexagonClick}
-              />
-              <FIRMSHotspotLayer
-                map={mapRef.current}
-                visible={showHotspotLayer}
-              />
-            </>
+          <FIRMSHotspotLayer
+            map={mapRef.current}
+            visible={showHotspotLayer}
+          />
+          <HexagonLayer
+            map={mapRef.current}
+            visible={showHexagonLayer}
+            selectedMonth={selectedMonth}
+            onHexagonClick={handleHexagonClick}
+            onLoadingChange={handleHexagonLoadingChange}
+          />
+          {isHexagonLoading && (
+            <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+              <div className="text-center">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <p className="text-white mt-2">Loading hexagon data...</p>
+              </div>
+            </div>
+          )}
+          {popupInfo && (
+            <Popup
+              longitude={popupInfo.longitude}
+              latitude={popupInfo.latitude}
+              onClose={() => setPopupInfo(null)}
+              closeOnClick={false}
+              anchor="bottom"
+              offset={15}
+            >
+              <div className="p-1 text-xs">
+                <div className="font-bold">{popupInfo.properties.PROV_NAM_T}</div>
+                <div>{popupInfo.properties.PROV_NAM_E}</div>
+                <div>พิกัด: {popupInfo.latitude.toFixed(4)}, {popupInfo.longitude.toFixed(4)}</div>
+              </div>
+            </Popup>
           )}
         </Map>
       </MapLayout>

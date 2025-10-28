@@ -6,12 +6,18 @@ import ReactECharts from 'echarts-for-react'
  * Displays monthly hotspot predictions as a line chart using ECharts
  */
 export default function PredictionChart({ predictions }) {
+  console.log('📊 PredictionChart rendered with predictions:', predictions)
+
   // Month abbreviations in Thai
   const monthAbbr = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
     'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
   const chartOption = useMemo(() => {
-    if (!predictions || predictions.length === 0) return {}
+    console.log('📊 ChartOption useMemo called with predictions:', predictions)
+    if (!predictions || predictions.length === 0) {
+      console.log('📊 No predictions, returning empty option')
+      return {}
+    }
 
     const values = predictions.map(p => Math.round(p.predicted_hotspot_count))
     console.log('📈 Chart updated - Values:', values)

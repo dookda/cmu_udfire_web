@@ -81,20 +81,19 @@ const MapComponent = forwardRef(function MapComponent({
   }
 
   return (
-    <div className={`relative ${className}`}>
       <Map
         ref={mapRef}
         initialViewState={initialViewState}
         mapStyle={BASEMAP_STYLES[basemap]}
         onLoad={handleMapLoad}
         style={{ width: '100%', height: '100%' }}
+        className={className}
       >
         <NavigationControl position="top-right" />
         <GeolocateControl position="top-right" />
 
         {children}
       </Map>
-    </div>
   )
 })
 
