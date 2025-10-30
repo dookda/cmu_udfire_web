@@ -15,7 +15,7 @@ export default function MapLayout({
   const [basemap, setBasemap] = useState('satellite')
 
   return (
-    <div className="h-screen flex flex-col bg-base-200">
+    <div className="h-full flex flex-col bg-base-200">
       {/* Top Toolbar */}
       <div className="bg-base-300 border-b border-base-content/10 px-2 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between z-20">
         {/* Left side buttons */}
@@ -105,37 +105,46 @@ export default function MapLayout({
           </div>
         </div>
 
-        {/* Map Container - Grows to fill remaining space */}
-        <div className="flex-1 relative overflow-hidden">
-          {/* Map */}
-          <div className="absolute inset-0">
-            {cloneElement(children, { basemap })}
+        {/* Map Container - Grows to fill remaining space with Card */}
+        <div className="flex-1 relative overflow-hidden p-2 sm:p-4">
+          {/* Map Card */}
+          <div className="card bg-base-100 shadow-xl h-full overflow-hidden">
+            <div className="absolute inset-0">
+              {cloneElement(children, { basemap })}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Bottom Panel with Collapse Button */}
       {bottomPanel && (
-        <div className={`relative bg-base-100 border-t border-base-content/10 overflow-hidden transition-all duration-300 ${
+        <div className={`relative bg-base-200 overflow-hidden transition-all duration-300 ${
           showBottomPanel ? 'h-[35vh]' : 'h-0'
         }`}>
-          {/* Collapse/Expand Button */}
-          <button
-            className="absolute -top-8 right-4 z-10 btn btn-xs btn-circle shadow-lg"
-            onClick={() => setShowBottomPanel(!showBottomPanel)}
-            title={showBottomPanel ? 'ซ่อนกราฟ' : 'แสดงกราฟ'}
-          >
-            {showBottomPanel ? (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
-              </svg>
-            )}
-          </button>
-          {bottomPanel}
+          {/* Chart Card Container */}
+          <div className="h-full p-2 sm:p-4 pt-0 sm:pt-2">
+            <div className="card bg-base-100 shadow-xl h-full">
+              <div className="card-body p-3 sm:p-4">
+                {/* Collapse/Expand Button */}
+                <button
+                  className="absolute -top-10 sm:-top-12 right-6 sm:right-8 z-10 btn btn-xs btn-circle shadow-lg bg-base-100"
+                  onClick={() => setShowBottomPanel(!showBottomPanel)}
+                  title={showBottomPanel ? 'ซ่อนกราฟ' : 'แสดงกราฟ'}
+                >
+                  {showBottomPanel ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+                    </svg>
+                  )}
+                </button>
+                {bottomPanel}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
