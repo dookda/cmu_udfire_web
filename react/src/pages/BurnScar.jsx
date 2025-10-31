@@ -16,7 +16,9 @@ export default function BurnScar() {
   const [cloudCover, setCloudCover] = useState(30)
   const [showLayer, setShowLayer] = useState(true)
   const [analysisRun, setAnalysisRun] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const mapRef = useRef()
+  const mapLayoutRef = useRef()
 
   // Study areas with coordinates (matching GEE script)
   const studyAreas = useMemo(() => [
@@ -48,6 +50,20 @@ export default function BurnScar() {
   useEffect(() => {
     fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
   }, [selectedArea, studyAreas, layerData])
+
+  // Auto-close modal when GEE data loads successfully
+  useEffect(() => {
+    if (!loading && !error && layerData && analysisRun && mapLayoutRef.current) {
+      // Show success state briefly before closing
+      setShowSuccess(true)
+      const timer = setTimeout(() => {
+        mapLayoutRef.current.closeModal()
+        setShowSuccess(false)
+      }, 1000) // Show success for 1 second before closing
+
+      return () => clearTimeout(timer)
+    }
+  }, [loading, error, layerData, analysisRun])
 
   // Get area name in Thai
   const getAreaName = () => {
@@ -226,16 +242,37 @@ export default function BurnScar() {
         ล้างข้อมูล
       </button>
 
-      {/* Loading/Error Status */}
-      {loading && (
-        <div className="mt-4 text-xs text-info">
-          <span className="loading loading-spinner loading-xs mr-1"></span>
-          Loading layer...
+      {/* Loading/Error/Success Status */}
+      {loading && !showSuccess && (
+        <div className="mt-4 p-4 bg-primary/5 backdrop-blur-sm rounded-lg border border-primary/10">
+          <div className="flex flex-col items-center gap-3">
+            <span className="loading loading-spinner loading-md text-primary"></span>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-primary">กำลังประมวลผล...</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังโหลดข้อมูลจาก Google Earth Engine</div>
+            </div>
+          </div>
         </div>
       )}
-      {error && (
-        <div className="mt-4 text-xs text-error">
-          Error: {error}
+      {showSuccess && (
+        <div className="mt-4 p-4 bg-success/5 backdrop-blur-sm rounded-lg border border-success/10">
+          <div className="flex flex-col items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-success">โหลดข้อมูลสำเร็จ!</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังแสดงผลบนแผนที่...</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {error && !loading && !showSuccess && (
+        <div className="mt-4 alert alert-error alert-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-xs">{error}</span>
         </div>
       )}
     </div>
@@ -257,7 +294,7 @@ export default function BurnScar() {
         </div>
       ) : (
         <div>
-          <div className="grid grid-cols-1 gap-2 sm:gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-3">
             {/* Total Burn Area Card */}
             <div className="card bg-gradient-to-br from-error/10 to-error/5 border border-error/20">
               <div className="card-body p-3 sm:p-4">
@@ -347,21 +384,12 @@ export default function BurnScar() {
           )}
         </div>
       )}
-
-      {/* No Data Message */}
-      {!loading && !error && burnStats.totalPixels === 0 && (
-        <div className="alert alert-info">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span className="text-sm">ไม่พบข้อมูลพื้นที่ไฟไหม้ในช่วงเวลาที่เลือก</span>
-        </div>
-      )}
     </div>
   )
 
   return (
     <MapLayout
+      ref={mapLayoutRef}
       title={`${getAreaName()} - Burn Scar Tracking`}
       area="ข้อมูล: Sentinel-2"
       coordinates="18.7128° N • 98.9950° E"

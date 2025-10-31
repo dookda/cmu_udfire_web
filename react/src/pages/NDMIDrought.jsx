@@ -15,7 +15,9 @@ export default function NDMIDrought() {
   const [daysComposite, setDaysComposite] = useState(30)
   const [showLayer, setShowLayer] = useState(true)
   const [analysisRun, setAnalysisRun] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const mapRef = useRef()
+  const mapLayoutRef = useRef()
 
   // Fetch GEE layer data only when analysis is run
   const { loading, error, layerData } = useGEELayer(analysisRun ? activeLayer : null, {
@@ -37,6 +39,20 @@ export default function NDMIDrought() {
   useEffect(() => {
     fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
   }, [selectedArea, studyAreas, layerData])
+
+  // Auto-close modal when GEE data loads successfully
+  useEffect(() => {
+    if (!loading && !error && layerData && analysisRun && mapLayoutRef.current) {
+      // Show success state briefly before closing
+      setShowSuccess(true)
+      const timer = setTimeout(() => {
+        mapLayoutRef.current.closeModal()
+        setShowSuccess(false)
+      }, 1000) // Show success for 1 second before closing
+
+      return () => clearTimeout(timer)
+    }
+  }, [loading, error, layerData, analysisRun])
 
   // Generate sample timeseries data based on layer type and area
   const generateTimeSeriesData = useMemo(() => {
@@ -226,17 +242,36 @@ export default function NDMIDrought() {
         ล้างข้อมูล
       </button>
 
-      {/* Loading indicator */}
-      {loading && (
-        <div className="alert alert-info py-2">
-          <span className="loading loading-spinner loading-xs"></span>
-          <span className="text-xs">กำลังโหลดข้อมูล...</span>
+      {/* Loading/Error/Success Status */}
+      {loading && !showSuccess && (
+        <div className="mt-4 p-4 bg-primary/5 backdrop-blur-sm rounded-lg border border-primary/10">
+          <div className="flex flex-col items-center gap-3">
+            <span className="loading loading-spinner loading-md text-primary"></span>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-primary">กำลังประมวลผล...</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังโหลดข้อมูลจาก Google Earth Engine</div>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Error display */}
-      {error && (
-        <div className="alert alert-error py-2">
+      {showSuccess && (
+        <div className="mt-4 p-4 bg-success/5 backdrop-blur-sm rounded-lg border border-success/10">
+          <div className="flex flex-col items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-success">โหลดข้อมูลสำเร็จ!</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังแสดงผลบนแผนที่...</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {error && !loading && !showSuccess && (
+        <div className="mt-4 alert alert-error alert-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           <span className="text-xs">{error}</span>
         </div>
       )}
@@ -276,6 +311,7 @@ export default function NDMIDrought() {
 
   return (
     <MapLayout
+      ref={mapLayoutRef}
       title={`${getAreaName()} - ${getLayerName()}`}
       area={`ข้อมูล: Sentinel-2`}
       coordinates="18.7128° N • 98.9950° E"

@@ -1,15 +1,13 @@
-import { useState, cloneElement, useEffect, useRef } from 'react'
-import { useTheme } from '../contexts/ThemeContext'
+import { useState, cloneElement, useRef, useImperativeHandle, forwardRef } from 'react'
 
-export default function MapLayout({
+const MapLayout = forwardRef(({
   title,
   area,
   coordinates,
   children,
   sidePanel,
   bottomPanel
-}) {
-  const { theme, toggleTheme } = useTheme()
+}, ref) => {
   const sidePanelModalRef = useRef(null)
   const [basemap, setBasemap] = useState('satellite')
 
@@ -19,10 +17,36 @@ export default function MapLayout({
     }
   }
 
+  const closeSidePanelModal = () => {
+    if (sidePanelModalRef.current) {
+      sidePanelModalRef.current.close()
+    }
+  }
+
+  // Expose close function to parent components
+  useImperativeHandle(ref, () => ({
+    closeModal: closeSidePanelModal
+  }))
+
   return (
     <div className="min-h-screen flex flex-col bg-base-200">
       {/* Container to match navbar width */}
       <div className="w-[95%] max-w-5xl mx-auto flex-1 flex flex-col">
+        {/* Page Header */}
+        {title && (
+          <div className="px-2 sm:px-4 pt-4 pb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-base-content">
+              {title}
+            </h1>
+            {(area || coordinates) && (
+              <div className="flex flex-wrap gap-2 sm:gap-4 mt-1 text-xs sm:text-sm text-base-content/70">
+                {area && <span>{area}</span>}
+                {coordinates && <span>{coordinates}</span>}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col lg:flex-row">
           {/* Map Container - Grows to fill remaining space with Card */}
@@ -117,4 +141,8 @@ export default function MapLayout({
       </dialog>
     </div>
   )
-}
+})
+
+MapLayout.displayName = 'MapLayout'
+
+export default MapLayout

@@ -15,7 +15,9 @@ export default function Biomass() {
   const [activeLayer, setActiveLayer] = useState('biomass_3pgs')
   const [showLayer, setShowLayer] = useState(true)
   const [analysisRun, setAnalysisRun] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const mapRef = useRef()
+  const mapLayoutRef = useRef()
 
   // Study areas matching 3pgs.js
   const studyAreas = useMemo(() => [
@@ -46,6 +48,20 @@ export default function Biomass() {
   useEffect(() => {
     fitMapToBounds({ mapRef, layerData, studyAreas, selectedArea })
   }, [selectedArea, studyAreas, layerData])
+
+  // Auto-close modal when GEE data loads successfully
+  useEffect(() => {
+    if (!loading && !error && layerData && analysisRun && mapLayoutRef.current) {
+      // Show success state briefly before closing
+      setShowSuccess(true)
+      const timer = setTimeout(() => {
+        mapLayoutRef.current.closeModal()
+        setShowSuccess(false)
+      }, 1000) // Show success for 1 second before closing
+
+      return () => clearTimeout(timer)
+    }
+  }, [loading, error, layerData, analysisRun])
 
   // Get area name in Thai
   const getAreaName = () => {
@@ -172,16 +188,37 @@ export default function Biomass() {
         ล้างข้อมูล
       </button>
 
-      {/* Loading/Error Status */}
-      {loading && (
-        <div className="mt-4 text-xs text-info">
-          <span className="loading loading-spinner loading-xs mr-1"></span>
-          Loading layer...
+      {/* Loading/Error/Success Status */}
+      {loading && !showSuccess && (
+        <div className="mt-4 p-4 bg-primary/5 backdrop-blur-sm rounded-lg border border-primary/10">
+          <div className="flex flex-col items-center gap-3">
+            <span className="loading loading-spinner loading-md text-primary"></span>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-primary">กำลังประมวลผล...</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังโหลดข้อมูลจาก Google Earth Engine</div>
+            </div>
+          </div>
         </div>
       )}
-      {error && (
-        <div className="mt-4 text-xs text-error">
-          Error: {error}
+      {showSuccess && (
+        <div className="mt-4 p-4 bg-success/5 backdrop-blur-sm rounded-lg border border-success/10">
+          <div className="flex flex-col items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-center">
+              <div className="text-sm font-semibold text-success">โหลดข้อมูลสำเร็จ!</div>
+              <div className="text-xs text-base-content/60 mt-1">กำลังแสดงผลบนแผนที่...</div>
+            </div>
+          </div>
+        </div>
+      )}
+      {error && !loading && !showSuccess && (
+        <div className="mt-4 alert alert-error alert-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span className="text-xs">{error}</span>
         </div>
       )}
     </div>
@@ -189,7 +226,7 @@ export default function Biomass() {
 
   const chartContent = (
     <div className="py-2">
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="stat bg-base-300 rounded-lg p-4">
           <div className="stat-title text-xs sm:text-sm">Avg Biomass</div>
           <div className="stat-value text-2xl sm:text-3xl text-success">142 t/ha</div>
@@ -211,6 +248,7 @@ export default function Biomass() {
 
   return (
     <MapLayout
+      ref={mapLayoutRef}
       title={`${getAreaName()} - ติดตามปริมาณเชื้อเพลิง`}
       area="ข้อมูล: MODIS"
       coordinates="18.7128° N • 98.9950° E"
