@@ -150,7 +150,7 @@ export default function PredictionChart({ predictions }) {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 gap-2 text-xs flex-shrink-0">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs flex-shrink-0">
         <div className="bg-base-200 p-3 rounded">
           <div className="text-gray-500 mb-1">รวมทั้งปี</div>
           <div className="text-xl sm:text-2xl font-bold text-error">{Math.round(totalPredicted)} จุด</div>

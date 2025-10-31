@@ -1,6 +1,7 @@
-import { useRef, forwardRef, useImperativeHandle, useState } from 'react'
-import Map, { NavigationControl, ScaleControl, GeolocateControl } from 'react-map-gl/maplibre'
+import { useRef, forwardRef, useImperativeHandle } from 'react'
+import Map from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import CustomNavigationControl from './CustomNavigationControl'
 
 const BASEMAP_STYLES = {
   satellite: {
@@ -89,8 +90,7 @@ const MapComponent = forwardRef(function MapComponent({
         style={{ width: '100%', height: '100%' }}
         className={className}
       >
-        <NavigationControl position="top-right" />
-        <GeolocateControl position="top-right" />
+        <CustomNavigationControl />
 
         {children}
       </Map>
