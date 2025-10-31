@@ -150,25 +150,25 @@ export default function PredictionChart({ predictions }) {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-2 gap-2 text-xs flex-shrink-0">
-        <div className="bg-base-200 p-2 rounded">
-          <div className="text-gray-500">รวมทั้งปี</div>
-          <div className="text-lg font-bold text-error">{Math.round(totalPredicted)} จุด</div>
+      <div className="grid grid-cols-1 gap-2 text-xs flex-shrink-0">
+        <div className="bg-base-200 p-3 rounded">
+          <div className="text-gray-500 mb-1">รวมทั้งปี</div>
+          <div className="text-xl sm:text-2xl font-bold text-error">{Math.round(totalPredicted)} จุด</div>
         </div>
-        <div className="bg-base-200 p-2 rounded">
-          <div className="text-gray-500">เฉลี่ยต่อเดือน</div>
-          <div className="text-lg font-bold">{avgMonthly} จุด</div>
+        <div className="bg-base-200 p-3 rounded">
+          <div className="text-gray-500 mb-1">เฉลี่ยต่อเดือน</div>
+          <div className="text-xl sm:text-2xl font-bold">{avgMonthly} จุด</div>
         </div>
-        <div className="bg-base-200 p-2 rounded">
-          <div className="text-gray-500">เดือนสูงสุด</div>
-          <div className="text-sm font-bold text-warning">
-            {monthAbbr[new Date(maxMonth.date).getMonth()]} ({Math.round(maxMonth.predicted_hotspot_count)})
+        <div className="bg-base-200 p-3 rounded">
+          <div className="text-gray-500 mb-1">เดือนสูงสุด</div>
+          <div className="text-base sm:text-lg font-bold text-warning">
+            {monthAbbr[new Date(maxMonth.date).getMonth()]} ({Math.round(maxMonth.predicted_hotspot_count)} จุด)
           </div>
         </div>
-        <div className="bg-base-200 p-2 rounded">
-          <div className="text-gray-500">เดือนต่ำสุด</div>
-          <div className="text-sm font-bold text-success">
-            {monthAbbr[new Date(minMonth.date).getMonth()]} ({Math.round(minMonth.predicted_hotspot_count)})
+        <div className="bg-base-200 p-3 rounded">
+          <div className="text-gray-500 mb-1">เดือนต่ำสุด</div>
+          <div className="text-base sm:text-lg font-bold text-success">
+            {monthAbbr[new Date(minMonth.date).getMonth()]} ({Math.round(minMonth.predicted_hotspot_count)} จุด)
           </div>
         </div>
       </div>

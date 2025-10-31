@@ -14,10 +14,11 @@ export default function NDMIDrought() {
   const [activeLayer, setActiveLayer] = useState('ndmi')
   const [daysComposite, setDaysComposite] = useState(30)
   const [showLayer, setShowLayer] = useState(true)
+  const [analysisRun, setAnalysisRun] = useState(false)
   const mapRef = useRef()
 
-  // Fetch GEE layer data based on active layer
-  const { loading, error, layerData } = useGEELayer(activeLayer, {
+  // Fetch GEE layer data only when analysis is run
+  const { loading, error, layerData } = useGEELayer(analysisRun ? activeLayer : null, {
     area: selectedArea,
     endDate: selectedDate,
     days: daysComposite
@@ -88,6 +89,15 @@ export default function NDMIDrought() {
     return names[activeLayer] || activeLayer.toUpperCase()
   }
 
+  const handleRunAnalysis = () => {
+    setAnalysisRun(true)
+  }
+
+  const handleClearAnalysis = () => {
+    setAnalysisRun(false)
+    setShowLayer(true)
+  }
+
   const sidePanel = (
     <div className="p-4">
       <h3 className="font-bold mb-3 text-sm">ติดตาม NDVI, NDMI, NDWI</h3>
@@ -138,17 +148,19 @@ export default function NDMIDrought() {
       </div>
 
       {/* Show/Hide Layer Toggle */}
-      <div className="form-control mb-4">
-        <label className="label cursor-pointer justify-start gap-3">
-          <input
-            type="checkbox"
-            className="toggle toggle-primary toggle-sm"
-            checked={showLayer}
-            onChange={(e) => setShowLayer(e.target.checked)}
-          />
-          <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
-        </label>
-      </div>
+      {analysisRun && (
+        <div className="form-control mb-4">
+          <label className="label cursor-pointer justify-start gap-3">
+            <input
+              type="checkbox"
+              className="toggle toggle-primary toggle-sm"
+              checked={showLayer}
+              onChange={(e) => setShowLayer(e.target.checked)}
+            />
+            <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
+          </label>
+        </div>
+      )}
 
       <div className="divider my-2"></div>
 
@@ -190,6 +202,29 @@ export default function NDMIDrought() {
           </label>
         </div>
       </div>
+
+      {/* Action Buttons */}
+      <button
+        className="btn btn-primary btn-sm w-full mt-4"
+        onClick={handleRunAnalysis}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <span className="loading loading-spinner loading-xs"></span>
+            กำลังวิเคราะห์...
+          </>
+        ) : (
+          'รันการวิเคราะห์'
+        )}
+      </button>
+      <button
+        className="btn btn-outline btn-secondary btn-sm w-full mt-2"
+        onClick={handleClearAnalysis}
+        disabled={!analysisRun}
+      >
+        ล้างข้อมูล
+      </button>
 
       {/* Loading indicator */}
       {loading && (
@@ -253,7 +288,7 @@ export default function NDMIDrought() {
     >
       <Map ref={mapRef}>
         {/* Render GEE Tile Layer */}
-        {showLayer && layerData && layerData.tile_url && (
+        {analysisRun && showLayer && layerData && layerData.tile_url && (
           <>
             <GEETileLayer
               tileUrl={layerData.tile_url}

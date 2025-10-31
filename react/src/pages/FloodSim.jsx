@@ -150,28 +150,28 @@ export default function FloodSim() {
   )
 
   const chartContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">พื้นที่น้ำท่วม</div>
-          <div className="stat-value text-xl text-info">
+    <div className="py-2">
+      <div className="grid grid-cols-1 gap-3">
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">พื้นที่น้ำท่วม</div>
+          <div className="stat-value text-2xl sm:text-3xl text-info">
             {layerData?.flood_area ? `${layerData.flood_area.toFixed(2)} km²` : '-'}
           </div>
-          <div className="stat-desc">Flooded Area</div>
+          <div className="stat-desc text-xs">Flooded Area</div>
         </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">การเปลี่ยนแปลง</div>
-          <div className="stat-value text-xl text-warning">
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">การเปลี่ยนแปลง</div>
+          <div className="stat-value text-2xl sm:text-3xl text-warning">
             {layerData?.difference ? `${layerData.difference.toFixed(1)} dB` : '-'}
           </div>
-          <div className="stat-desc">SAR Difference</div>
+          <div className="stat-desc text-xs">SAR Difference</div>
         </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">ความเชื่อมั่น</div>
-          <div className="stat-value text-xl text-success">
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">ความเชื่อมั่น</div>
+          <div className="stat-value text-2xl sm:text-3xl text-success">
             {layerData?.confidence ? `${layerData.confidence}%` : '-'}
           </div>
-          <div className="stat-desc">Detection Confidence</div>
+          <div className="stat-desc text-xs">Detection Confidence</div>
         </div>
       </div>
     </div>

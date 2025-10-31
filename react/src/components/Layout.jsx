@@ -12,8 +12,8 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-base-200">
       {/* Navbar - Modern Icon-Based Design - Floating & Transparent */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl">
-        <div className="navbar bg-base-100/70 backdrop-blur-md shadow-xl rounded-full px-4 sm:px-8 border border-base-content/10">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-5xl px-2 sm:px-4">
+        <div className="navbar bg-base-100/70 backdrop-blur-md shadow-xl rounded-2xl px-2 sm:px-4 border border-base-content/10">
         {/* Left Navigation Icons */}
         <div className="navbar-start">
           <div className="flex items-center gap-2 sm:gap-4">
@@ -125,7 +125,7 @@ export default function Layout() {
       </div>
 
       {/* Main Content */}
-      <main className="h-screen pt-20">
+      <main className="min-h-screen pt-20">
         <Outlet />
       </main>
     </div>

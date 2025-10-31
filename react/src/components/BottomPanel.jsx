@@ -1,9 +1,9 @@
 export default function BottomPanel({ chartData }) {
   console.log('📊 BottomPanel rendered with chartData:', chartData)
   return (
-    <div className="h-full flex flex-col">
+    <div className="w-full">
       {/* Content Display Area */}
-      <div className="h-full px-4 py-4 overflow-hidden">
+      <div className="py-2">
         {chartData}
       </div>
     </div>

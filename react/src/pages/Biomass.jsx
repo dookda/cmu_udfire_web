@@ -14,6 +14,7 @@ export default function Biomass() {
   const [daysComposite, setDaysComposite] = useState(30)
   const [activeLayer, setActiveLayer] = useState('biomass_3pgs')
   const [showLayer, setShowLayer] = useState(true)
+  const [analysisRun, setAnalysisRun] = useState(false)
   const mapRef = useRef()
 
   // Study areas matching 3pgs.js
@@ -25,12 +26,21 @@ export default function Biomass() {
     { value: 'msr', label: 'แม่สะเรียง แม่ฮ่องสอน', longitude: 98.2615, latitude: 18.1750, zoom: 12 }
   ], [])
 
-  // Fetch GEE biomass layer data
-  const { loading, error, layerData } = useGEELayer('biomass', {
+  // Fetch GEE biomass layer data only when analysis is run
+  const { loading, error, layerData } = useGEELayer(analysisRun ? 'biomass' : null, {
     area: selectedArea,
     endDate: selectedDate,
     days: daysComposite
   })
+
+  const handleRunAnalysis = () => {
+    setAnalysisRun(true)
+  }
+
+  const handleClearAnalysis = () => {
+    setAnalysisRun(false)
+    setShowLayer(true)
+  }
 
   // Auto-zoom to study area using bounds from GEE data when available
   useEffect(() => {
@@ -91,17 +101,19 @@ export default function Biomass() {
       </div>
 
       {/* Show/Hide Layer Toggle */}
-      <div className="form-control mb-4">
-        <label className="label cursor-pointer justify-start gap-3">
-          <input
-            type="checkbox"
-            className="toggle toggle-primary toggle-sm"
-            checked={showLayer}
-            onChange={(e) => setShowLayer(e.target.checked)}
-          />
-          <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
-        </label>
-      </div>
+      {analysisRun && (
+        <div className="form-control mb-4">
+          <label className="label cursor-pointer justify-start gap-3">
+            <input
+              type="checkbox"
+              className="toggle toggle-primary toggle-sm"
+              checked={showLayer}
+              onChange={(e) => setShowLayer(e.target.checked)}
+            />
+            <span className="label-text text-xs font-bold">แสดงชั้นข้อมูล</span>
+          </label>
+        </div>
+      )}
 
       {/* Date Selector */}
       <div className="form-control mb-4">
@@ -137,6 +149,29 @@ export default function Biomass() {
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <button
+        className="btn btn-primary btn-sm w-full mt-4"
+        onClick={handleRunAnalysis}
+        disabled={loading}
+      >
+        {loading ? (
+          <>
+            <span className="loading loading-spinner loading-xs"></span>
+            กำลังวิเคราะห์...
+          </>
+        ) : (
+          'รันการวิเคราะห์'
+        )}
+      </button>
+      <button
+        className="btn btn-outline btn-secondary btn-sm w-full mt-2"
+        onClick={handleClearAnalysis}
+        disabled={!analysisRun}
+      >
+        ล้างข้อมูล
+      </button>
+
       {/* Loading/Error Status */}
       {loading && (
         <div className="mt-4 text-xs text-info">
@@ -153,22 +188,22 @@ export default function Biomass() {
   )
 
   const chartContent = (
-    <div className="py-4">
-      <div className="grid grid-cols-3 gap-4">
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">Avg Biomass</div>
-          <div className="stat-value text-xl text-success">142 t/ha</div>
-          <div className="stat-desc">Tons per hectare</div>
+    <div className="py-2">
+      <div className="grid grid-cols-1 gap-3">
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">Avg Biomass</div>
+          <div className="stat-value text-2xl sm:text-3xl text-success">142 t/ha</div>
+          <div className="stat-desc text-xs">Tons per hectare</div>
         </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">Total Carbon</div>
-          <div className="stat-value text-xl">71 tC/ha</div>
-          <div className="stat-desc">Carbon storage</div>
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">Total Carbon</div>
+          <div className="stat-value text-2xl sm:text-3xl">71 tC/ha</div>
+          <div className="stat-desc text-xs">Carbon storage</div>
         </div>
-        <div className="stat bg-base-300 rounded-lg">
-          <div className="stat-title text-xs">Growth Rate</div>
-          <div className="stat-value text-xl">+8.2%</div>
-          <div className="stat-desc">Annual increase</div>
+        <div className="stat bg-base-300 rounded-lg p-4">
+          <div className="stat-title text-xs sm:text-sm">Growth Rate</div>
+          <div className="stat-value text-2xl sm:text-3xl">+8.2%</div>
+          <div className="stat-desc text-xs">Annual increase</div>
         </div>
       </div>
     </div>
@@ -188,7 +223,7 @@ export default function Biomass() {
     >
       <Map ref={mapRef}>
         {/* Render GEE Layer based on active layer selection and visibility toggle */}
-        {showLayer && layerData && layerData[activeLayer] && layerData[activeLayer].tile_url && (
+        {analysisRun && showLayer && layerData && layerData[activeLayer] && layerData[activeLayer].tile_url && (
           <>
             <GEETileLayer
               tileUrl={layerData[activeLayer].tile_url}

@@ -181,6 +181,60 @@ class GEEService:
         threshold = 0.8
         burn_scars = nirbi.lt(threshold)
 
+        # Calculate burn severity classes based on NIRBI values
+        # Low severity: 0.5 < NIRBI < 0.8
+        # Moderate severity: 0.2 < NIRBI <= 0.5
+        # High severity: NIRBI <= 0.2
+        low_severity = nirbi.lt(threshold).And(nirbi.gte(0.5))
+        moderate_severity = nirbi.lt(0.5).And(nirbi.gte(0.2))
+        high_severity = nirbi.lt(0.2)
+
+        # Calculate pixel counts and area statistics
+        # Pixel size for Sentinel-2 is 10m x 10m = 100 m²
+        pixel_area = 100  # m²
+        pixel_area_km2 = pixel_area / 1_000_000  # Convert to km²
+
+        # Get pixel counts using reduceRegion
+        scale = 10  # Sentinel-2 resolution
+
+        # Calculate statistics for each severity class
+        low_stats = low_severity.multiply(ee.Image.pixelArea()).reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=area.geometry(),
+            scale=scale,
+            maxPixels=1e9
+        ).getInfo()
+
+        moderate_stats = moderate_severity.multiply(ee.Image.pixelArea()).reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=area.geometry(),
+            scale=scale,
+            maxPixels=1e9
+        ).getInfo()
+
+        high_stats = high_severity.multiply(ee.Image.pixelArea()).reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=area.geometry(),
+            scale=scale,
+            maxPixels=1e9
+        ).getInfo()
+
+        # Extract areas in m² and convert to km²
+        low_area_m2 = low_stats.get('NIRBI', 0)
+        moderate_area_m2 = moderate_stats.get('NIRBI', 0)
+        high_area_m2 = high_stats.get('NIRBI', 0)
+
+        low_area_km2 = low_area_m2 / 1_000_000
+        moderate_area_km2 = moderate_area_m2 / 1_000_000
+        high_area_km2 = high_area_m2 / 1_000_000
+        total_area_km2 = low_area_km2 + moderate_area_km2 + high_area_km2
+
+        # Calculate pixel counts
+        low_pixels = int(low_area_m2 / pixel_area)
+        moderate_pixels = int(moderate_area_m2 / pixel_area)
+        high_pixels = int(high_area_m2 / pixel_area)
+        total_pixels = low_pixels + moderate_pixels + high_pixels
+
         # Visualization parameters
         nbr_vis = {
             'min': -0.3,
@@ -208,7 +262,17 @@ class GEEService:
             },
             'burn_scars': {
                 'tile_url': burn_scar_map_id['tile_fetcher'].url_format,
-                'vis_params': burn_scar_vis
+                'vis_params': burn_scar_vis,
+                'statistics': {
+                    'total_area_km2': round(total_area_km2, 2),
+                    'low_area_km2': round(low_area_km2, 2),
+                    'moderate_area_km2': round(moderate_area_km2, 2),
+                    'high_area_km2': round(high_area_km2, 2),
+                    'total_pixels': total_pixels,
+                    'low_severity_pixels': low_pixels,
+                    'moderate_severity_pixels': moderate_pixels,
+                    'high_severity_pixels': high_pixels
+                }
             },
             'bounds': bounds
         }
