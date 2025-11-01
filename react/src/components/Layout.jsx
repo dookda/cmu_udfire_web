@@ -24,19 +24,19 @@ export default function Layout() {
                 <li>
                   <Link to="/" className={isActive('/') ? 'active' : ''}>
                     <i className="bi bi-layers-fill text-lg"></i>
-                    ดัชนีความแห้งแล้ง NDMI
+                    ดัชนีความแห้งแล้ง
                   </Link>
                 </li>
                 <li>
                   <Link to="/burn-scar" className={isActive('/burn-scar') ? 'active' : ''}>
                     <i className="bi bi-fire text-lg"></i>
-                    ติดตามพื้นที่ไฟไหม้
+                    ติดตามพื้นที่เผาไหม้
                   </Link>
                 </li>
                 <li>
                   <Link to="/biomass" className={isActive('/biomass') ? 'active' : ''}>
                     <i className="bi bi-tree-fill text-lg"></i>
-                    มวลชีวภาพ 3PGs
+                    ปริมาณเชื้อเพลิง
                   </Link>
                 </li>
                 <li>
