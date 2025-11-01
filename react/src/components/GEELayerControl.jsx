@@ -41,7 +41,7 @@ export default function GEELayerControl({
   return (
     <div className="gee-layer-control">
       {/* Layer Selector */}
-      <div className="flex flex-col gap-2 bg-base-100 p-3 rounded-lg shadow-lg">
+      <div className="flex flex-col gap-2 bg-base-100/70 backdrop-blur-md p-3 rounded-lg shadow-lg border border-base-content/10">
         <div className="text-xs font-bold mb-1">Satellite Layers</div>
 
         {layerTypes.map((layerType) => (

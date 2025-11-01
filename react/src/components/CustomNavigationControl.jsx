@@ -47,7 +47,7 @@ export default function CustomNavigationControl() {
   return (
     <div className="absolute top-4 right-4 z-20 flex flex-col gap-2">
       {/* Navigation Controls Group */}
-      <div className="bg-base-100/80 backdrop-blur-md shadow-xl rounded-2xl p-2 border border-base-content/10">
+      <div className="bg-base-100/70 backdrop-blur-md shadow-xl rounded-2xl p-2 border border-base-content/10">
         <div className="flex flex-col gap-2">
           {/* Zoom In */}
           <button

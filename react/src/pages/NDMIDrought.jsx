@@ -30,9 +30,15 @@ export default function NDMIDrought() {
   const studyAreas = useMemo(() => [
     { value: 'ud', label: 'ปากทับ อุตรดิตถ์', longitude: 100.4945, latitude: 17.6152, zoom: 12 },
     { value: 'mt', label: 'แม่ทาเหนือ เชียงใหม่', longitude: 99.2568, latitude: 18.7885, zoom: 12 },
-    { value: 'ky', label: 'ขุนยวม แม่ฮ่องสอน', longitude: 98.5375, latitude: 18.8046, zoom: 12 },
     { value: 'vs', label: 'เวียงสา น่าน', longitude: 100.7994, latitude: 18.5397, zoom: 12 },
-    { value: 'ms', label: 'แม่สะเรียง แม่ฮ่องสอน', longitude: 98.2615, latitude: 18.1750, zoom: 12 }
+    // Mae Hong Son Province Districts
+    { value: 'mhs', label: 'เมืองแม่ฮ่องสอน แม่ฮ่องสอน', longitude: 97.9655, latitude: 19.3014, zoom: 12 },
+    { value: 'ky', label: 'ขุนยวม แม่ฮ่องสอน', longitude: 98.5375, latitude: 18.8046, zoom: 12 },
+    { value: 'pai', label: 'ปาย แม่ฮ่องสอน', longitude: 98.4408, latitude: 19.3581, zoom: 12 },
+    { value: 'ms', label: 'แม่สะเรียง แม่ฮ่องสอน', longitude: 98.2615, latitude: 18.1750, zoom: 12 },
+    { value: 'mln', label: 'แม่ลาน้อย แม่ฮ่องสอน', longitude: 97.9897, latitude: 18.3336, zoom: 12 },
+    { value: 'sm', label: 'สบเมย แม่ฮ่องสอน', longitude: 98.1842, latitude: 18.3098, zoom: 12 },
+    { value: 'pm', label: 'ปางมะผ้า แม่ฮ่องสอน', longitude: 98.2067, latitude: 19.5894, zoom: 12 }
   ], [])
 
   // Auto-zoom to study area using bounds from GEE data when available
