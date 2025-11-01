@@ -5,6 +5,7 @@ import Map from '../components/Map'
 import BottomPanel from '../components/BottomPanel'
 import HexagonLayer from '../components/HexagonLayer'
 import FIRMSHotspotLayer from '../components/FIRMSHotspotLayer'
+import DistrictBoundaryLayer from '../components/DistrictBoundaryLayer'
 import PredictionChart from '../components/PredictionChart'
 import ErrorBoundary from '../components/ErrorBoundary'
 
@@ -14,6 +15,7 @@ export default function HotspotPredicting() {
   const [selectedMonth, setSelectedMonth] = useState('2026-01-01')
   const [showHexagonLayer, setShowHexagonLayer] = useState(true)
   const [showHotspotLayer, setShowHotspotLayer] = useState(true)
+  const [showDistrictLayer, setShowDistrictLayer] = useState(true)
   const [selectedHexagon, setSelectedHexagon] = useState(null)
   const [popupInfo, setPopupInfo] = useState(null)
   const [isHexagonLoading, setIsHexagonLoading] = useState(false)
@@ -129,7 +131,7 @@ export default function HotspotPredicting() {
         </label>
       </div>
 
-      <div className="form-control mb-4">
+      <div className="form-control mb-3">
         <label className="label cursor-pointer justify-start gap-3">
           <input
             type="checkbox"
@@ -138,6 +140,18 @@ export default function HotspotPredicting() {
             onChange={(e) => setShowHotspotLayer(e.target.checked)}
           />
           <span className="label-text text-xs font-bold">จุดความร้อน FIRMS (24 ชม.)</span>
+        </label>
+      </div>
+
+      <div className="form-control mb-4">
+        <label className="label cursor-pointer justify-start gap-3">
+          <input
+            type="checkbox"
+            className="toggle toggle-accent toggle-sm"
+            checked={showDistrictLayer}
+            onChange={(e) => setShowDistrictLayer(e.target.checked)}
+          />
+          <span className="label-text text-xs font-bold">ขอบเขตอำเภอ (Districts)</span>
         </label>
       </div>
 
@@ -222,6 +236,10 @@ export default function HotspotPredicting() {
             selectedMonth={selectedMonth}
             onHexagonClick={handleHexagonClick}
             onLoadingChange={handleHexagonLoadingChange}
+          />
+          <DistrictBoundaryLayer
+            map={mapRef.current}
+            visible={showDistrictLayer}
           />
           {isHexagonLoading && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
