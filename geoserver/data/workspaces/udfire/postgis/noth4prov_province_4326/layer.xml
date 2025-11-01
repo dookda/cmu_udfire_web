@@ -1,0 +1,17 @@
+<layer>
+  <name>noth4prov_province_4326</name>
+  <id>LayerInfoImpl--2290cd58:19a3e83677e:-7ff6</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--2290cd58:19a3e83677e:-7fee</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--2290cd58:19a3e83677e:-7ff7</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-11-01 08:26:00.393 UTC</dateCreated>
+  <dateModified>2025-11-01 08:27:59.598 UTC</dateModified>
+</layer>

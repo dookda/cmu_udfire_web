@@ -1,0 +1,17 @@
+<layer>
+  <name>noth4prov_district_4326</name>
+  <id>LayerInfoImpl--2290cd58:19a3e83677e:-7ff8</id>
+  <type>VECTOR</type>
+  <defaultStyle>
+    <id>StyleInfoImpl--2290cd58:19a3e83677e:-7ff5</id>
+  </defaultStyle>
+  <resource class="featureType">
+    <id>FeatureTypeInfoImpl--2290cd58:19a3e83677e:-7ff9</id>
+  </resource>
+  <attribution>
+    <logoWidth>0</logoWidth>
+    <logoHeight>0</logoHeight>
+  </attribution>
+  <dateCreated>2025-11-01 08:25:48.662 UTC</dateCreated>
+  <dateModified>2025-11-01 08:27:01.443 UTC</dateModified>
+</layer>
