@@ -123,7 +123,7 @@ const MapLayout = forwardRef(({
             <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
           </form>
 
-          <h3 className="font-bold text-lg mb-4">ตั้งค่าและเครื่องมือ</h3>
+          <h3 className="font-bold text-lg mb-4">ตั้งค่าการวิเคราะห์</h3>
 
           <div className="max-h-[60vh] overflow-y-auto">
             {sidePanel}

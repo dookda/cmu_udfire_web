@@ -44,21 +44,29 @@ export default function TimeSeriesChart({ data, layerType, areaLabel }) {
 
     // Chart options
     const option = {
+      textStyle: {
+        fontFamily: 'Noto Sans Thai, sans-serif'
+      },
       title: {
         text: config.label,
         subtext: areaLabel,
         left: 'left',
         textStyle: {
           fontSize: 14,
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontFamily: 'Noto Sans Thai, sans-serif'
         },
         subtextStyle: {
           fontSize: 12,
-          color: '#999'
+          color: '#999',
+          fontFamily: 'Noto Sans Thai, sans-serif'
         }
       },
       tooltip: {
         trigger: 'axis',
+        textStyle: {
+          fontFamily: 'Noto Sans Thai, sans-serif'
+        },
         formatter: (params) => {
           const param = params[0]
           return `${param.name}<br/>${param.seriesName}: ${param.value.toFixed(3)}`
@@ -78,7 +86,8 @@ export default function TimeSeriesChart({ data, layerType, areaLabel }) {
         nameGap: 30,
         nameTextStyle: {
           fontSize: 12,
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontFamily: 'Noto Sans Thai, sans-serif'
         },
         axisLabel: {
           formatter: (value) => {
@@ -88,7 +97,8 @@ export default function TimeSeriesChart({ data, layerType, areaLabel }) {
             return `${day} ${month}`
           },
           rotate: 45,
-          fontSize: 10
+          fontSize: 10,
+          fontFamily: 'Noto Sans Thai, sans-serif'
         }
       },
       yAxis: {
@@ -96,7 +106,8 @@ export default function TimeSeriesChart({ data, layerType, areaLabel }) {
         min: -1,
         max: 1,
         axisLabel: {
-          formatter: '{value}'
+          formatter: '{value}',
+          fontFamily: 'Noto Sans Thai, sans-serif'
         },
         splitLine: {
           lineStyle: {
@@ -138,7 +149,7 @@ export default function TimeSeriesChart({ data, layerType, areaLabel }) {
               color: '#999',
               type: 'dashed'
             },
-            data: [{ yAxis: 0, label: { formatter: '0' } }]
+            data: [{ yAxis: 0, label: { formatter: '0', fontFamily: 'Noto Sans Thai, sans-serif' } }]
           }
         }
       ]

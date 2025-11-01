@@ -27,16 +27,23 @@ export default function PredictionChart({ predictions }) {
     })
 
     return {
+      textStyle: {
+        fontFamily: 'Noto Sans Thai, sans-serif'
+      },
       title: {
         text: 'การคาดการณ์จุดความร้อน 2026',
         left: 'center',
         textStyle: {
           fontSize: 14,
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          fontFamily: 'Noto Sans Thai, sans-serif'
         }
       },
       tooltip: {
         trigger: 'axis',
+        textStyle: {
+          fontFamily: 'Noto Sans Thai, sans-serif'
+        },
         formatter: (params) => {
           const data = params[0]
           return `${data.name}<br/>${data.value} จุด`
@@ -56,17 +63,20 @@ export default function PredictionChart({ predictions }) {
           alignWithLabel: true
         },
         axisLabel: {
-          fontSize: 11
+          fontSize: 11,
+          fontFamily: 'Noto Sans Thai, sans-serif'
         }
       },
       yAxis: {
         type: 'value',
         name: 'จำนวนจุด',
         nameTextStyle: {
-          fontSize: 11
+          fontSize: 11,
+          fontFamily: 'Noto Sans Thai, sans-serif'
         },
         axisLabel: {
-          fontSize: 10
+          fontSize: 10,
+          fontFamily: 'Noto Sans Thai, sans-serif'
         },
         splitLine: {
           lineStyle: {
@@ -112,7 +122,8 @@ export default function PredictionChart({ predictions }) {
               { type: 'min', name: 'ต่ำสุด' }
             ],
             label: {
-              fontSize: 10
+              fontSize: 10,
+              fontFamily: 'Noto Sans Thai, sans-serif'
             }
           }
         }
